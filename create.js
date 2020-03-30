@@ -98,26 +98,21 @@ scene.add(directionalLight2);
 const container = new THREE.Object3D();
 scene.add(container);
 
-{
+/* {
   const parser = new vox.Parser();
   parser.parse('./cat.vox').then(voxelData => {
     console.log('parsed', voxelData);
 
-    voxelData.voxels; // voxel position and color data
-    voxelData.size; // model size
-    voxelData.palette; // palette data
-
     const builder = new vox.MeshBuilder(voxelData, {
       originToBottom: false,
     });
-
     const mesh = builder.createMesh();
     mesh.scale.set(0.1, 0.1, 0.1);
     mesh.castShadow = true;
     mesh.receiveShadow = false;
     container.add(mesh);
   });
-}
+} */
 
 const orbitControls = new OrbitControls(camera, interfaceDocument.querySelector('.background'), interfaceDocument);
 orbitControls.target.copy(camera.position).add(new THREE.Vector3(0, 0, -1.5));
@@ -683,99 +678,117 @@ const _makeMiningMesh = (x, y, z) => {
       return Promise.resolve(() => {});
     }
   };
-  /* mesh.collide = () => {
-    if (mesh.visible) {
-      return mcWorker.request({
-        method: 'collide',
-        positions: geometry.attributes.position.array,
-        origin: localRaycaster.ray.origin.toArray(new Float32Array(3)),
-        direction: localRaycaster.ray.direction.toArray(new Float32Array(3))
-      }).then(result => () => {
-        // console.log('collide', !isNaN(result.collision[0]));
-        if (!isNaN(result.collision[0])) {
-          collisionMesh.position.fromArray(result.collision);
-          collisionMesh.visible = true;
+  mesh.destroy = () => {
+    geometry.dispose();
+    // material.dispose();
+  };
+  return mesh;
+};
+const voxelMeshes = [];
+const _makeVoxelMesh = (x, y, z) => {
+  const geometry = new THREE.BufferGeometry();
+  const material = objectMaterial;
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.scale.set(0.1, 0.1, 0.1)
+  mesh.frustumCulled = false;
+  mesh.visible = false;
 
-          const oldColorAttribute = geometry.attributes.color.old || geometry.attributes.color;
-          const oldColors = oldColorAttribute.array;
-          const newColors = Float32Array.from(oldColors);
-          for (let i = 0; i < 3; i++) {
-            newColors[result.collisionIndex + i*3] = currentColor.r;
-            newColors[result.collisionIndex + i*3 + 1] = currentColor.g;
-            newColors[result.collisionIndex + i*3 + 2] = currentColor.b;
-          }
-          geometry.setAttribute('color', new THREE.BufferAttribute(newColors, 3));
-          geometry.attributes.color.old = oldColorAttribute;
-        } else {
-          collisionMesh.visible = false;
+  mesh.x = x;
+  mesh.y = y;
+  mesh.z = z;
 
-          const oldColorAttribute = geometry.attributes.color.old;
-          if (oldColorAttribute) {
-            geometry.setAttribute('color', oldColorAttribute);
-          }
-        }
+  const voxels = [];
+  const palette = (() => {
+    const palette = Array(256);
+    const c = {r: 255, g: 0, b: 0, a: 255};
+    for (let i = 0; i < palette.length; i++) {
+      palette[i] = c;
+    }
+    return palette;
+  })();
+  let dirtyPos = false;
+  mesh.set = (value, x, y, z) => {
+    x -= mesh.x * PARCEL_SIZE;
+    y -= mesh.y * PARCEL_SIZE;
+    z -= mesh.z * PARCEL_SIZE;
+
+    x /= PARCEL_SIZE;
+    y /= PARCEL_SIZE;
+    z /= PARCEL_SIZE;
+
+    if (!voxels.some(v => v.x === x && v.y === y && v.z === z)) {
+      voxels.push({
+        x,
+        y,
+        z,
+        colorIndex: 0,
       });
+
+      dirtyPos = true;
+    }
+  };
+  mesh.refresh = () => {
+    if (dirtyPos) {
+      dirtyPos = false;
+
+      const voxelData = {
+        size: {
+          x: PARCEL_SIZE,
+          y: PARCEL_SIZE,
+          z: PARCEL_SIZE,
+        },
+        voxels,
+        palette,
+      };
+      const builder = new vox.MeshBuilder(voxelData, {
+        originToBottom: false,
+      });
+      const voxelMesh = builder.createMesh();
+      mesh.geometry.dispose();
+      mesh.geometry = voxelMesh.geometry;
+      console.log('new geo', voxelMesh);
+      mesh.visible = true;
+
+      return Promise.resolve(() => {});
+
+      /* const arrayBuffer = new ArrayBuffer(300*1024);
+      return mcWorker.request({
+        method: 'march',
+        dims,
+        potential,
+        brush,
+        shift,
+        scale,
+        arrayBuffer,
+      }, [arrayBuffer]).then(res => () => {
+        if (res.positions.length > 0) {
+          geometry.setAttribute('position', new THREE.BufferAttribute(res.positions, 3));
+          geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(res.positions.length*2/3), 2));
+          geometry.setAttribute('color', new THREE.BufferAttribute(res.colors, 3));
+          geometry.deleteAttribute('normal');
+          geometry.setIndex(new THREE.BufferAttribute(res.faces, 1));
+          geometry.computeVertexNormals();
+          mesh.visible = true;
+        } else {
+          mesh.visible = false;
+        }
+      }); */
     } else {
       return Promise.resolve(() => {});
     }
   };
-  mesh.update = () => {
-    if (!colliding && geometry.attributes.position) {
-      colliding = true;
 
-      const controllerMesh = controllerMeshes[1]; // XXX make this work for all controllers
-      mcWorker.request({
-        method: 'collide',
-        positions: geometry.attributes.position.array,
-        indices: geometry.index.array,
-        origin: controllerMesh.ray.origin.toArray(new Float32Array(3)),
-        direction: controllerMesh.ray.direction.toArray(new Float32Array(3)),
-      })
-        .then(collision => {
-          material.uniforms.uSelect.value.fromArray(collision);
-        })
-        .catch(err => {
-          console.warn(err.stack);
-        })
-        .finally(() => {
-          colliding = false;
-        });
-    }
-  };
-  mesh.intersect = ray => {
-    if (isFinite(material.uniforms.uSelect.value.x)) {
-      const intersectionPoint = material.uniforms.uSelect.value.clone();
-      const distance = ray.origin.distanceTo(intersectionPoint);
-      return {
-        type: 'mine',
-        mesh,
-        intersectionPoint,
-        distance,
-      };
-    } else {
-      return null;
-    }
-  };
-  mesh.setDirty = () => {
-    dirtyPos = true;
-  };
-  mesh.reset = () => {
-    potential.fill(potentialFillValue);
-    brush.fill(0);
-    dirtyPos = true;
-  }; */
   mesh.destroy = () => {
     geometry.dispose();
-    material.dispose();
+    // material.dispose();
   };
-
   return mesh;
 };
 let miningMeshes = [];
-const _findMiningMeshByIndex = (x, y, z) => miningMeshes.find(miningMesh => miningMesh.x === x && miningMesh.y === y && miningMesh.z === z);
-const _findOrAddMiningMeshesByContainCoord = (x, y, z) => {
+const _findMeshByIndex = miningMeshes => (x, y, z) => miningMeshes.find(miningMesh => miningMesh.x === x && miningMesh.y === y && miningMesh.z === z);
+const _findOrAddMeshesByContainCoord = (miningMeshes, makeMesh) => (x, y, z) => {
   const result = [];
-  const miningMesh = _findMiningMeshByIndex(x, y, z);
+  const miningMesh = _findMeshByIndex(miningMeshes)(x, y, z);
   miningMesh && result.push(miningMesh);
   const factor = 1;
   for (let dx = -factor; dx <= factor; dx++) {
@@ -784,9 +797,9 @@ const _findOrAddMiningMeshesByContainCoord = (x, y, z) => {
       const az = Math.floor(z + dz*0.5);
       for (let dy = -factor; dy <= factor; dy++) {
         const ay = Math.floor(y + dy*0.5);
-        let miningMesh = _findMiningMeshByIndex(ax, ay, az);
+        let miningMesh = _findMeshByIndex(miningMeshes)(ax, ay, az);
         if (!miningMesh) {
-          miningMesh = _makeMiningMesh(ax, ay, az);
+          miningMesh = makeMesh(ax, ay, az);
           scene.add(miningMesh);
           miningMeshes.push(miningMesh);
         }
@@ -796,6 +809,10 @@ const _findOrAddMiningMeshesByContainCoord = (x, y, z) => {
   }
   return result;
 };
+const _findMiningMeshByIndex = _findMeshByIndex(miningMeshes);
+const _findOrAddMiningMeshesByContainCoord = _findOrAddMeshesByContainCoord(miningMeshes, _makeMiningMesh);
+const _findVoxelMeshByIndex = _findMeshByIndex(voxelMeshes);
+const _findOrAddVoxelMeshesByContainCoord = _findOrAddMeshesByContainCoord(voxelMeshes, _makeVoxelMesh);
 const _newMiningMeshes = () => {
   for (let i = 0; i < miningMeshes.length; i++) {
     const miningMesh = miningMeshes[i];
@@ -967,6 +984,12 @@ const _colorMiningMeshes = (x, y, z, c) => {
     miningMesh.color(x, y, z, c);
   });
 };
+const _voxelMiningMeshes = (x, y, z) => {
+  const voxelMeshes = _findOrAddVoxelMeshesByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
+  voxelMeshes.forEach(voxelMesh => {
+    voxelMesh.set(x, y, z);
+  });
+};
 let refreshing = false;
 let refreshQueued = false;
 const refreshCbs = [];
@@ -989,6 +1012,35 @@ const _refreshMiningMeshes = async () => {
     if (refreshQueued) {
       refreshQueued = false;
       _refreshMiningMeshes();
+    } else {
+      for (let i = 0; i < refreshCbs.length; i++) {
+        refreshCbs[i]();
+      }
+      refreshCbs.length = 0;
+    }
+  } else {
+    refreshQueued = true;
+  }
+};
+const _refreshVoxelMiningMeshes = async () => {
+  if (!refreshing) {
+    refreshing = true;
+
+    const fns = await Promise.all(voxelMeshes.map(voxelMesh => voxelMesh.refresh()));
+    for (let i = 0; i < fns.length; i++) {
+      fns[i]();
+    }
+    const commitTool = Array.from(tools).find(tool => tool.matches('[tool=commit]'));
+    if (miningMeshes.some(miningMesh => miningMesh.visible)) {
+      commitTool.classList.remove('hidden');
+    } else {
+      commitTool.classList.add('hidden');
+    }
+
+    refreshing = false;
+    if (refreshQueued) {
+      refreshQueued = false;
+      _refreshVoxelMeshes();
     } else {
       for (let i = 0; i < refreshCbs.length; i++) {
         refreshCbs[i]();
@@ -1261,7 +1313,7 @@ let toolGrip = false;
 const _updateRaycasterFromMouseEvent = (raycaster, e) => {
   const mouse = new THREE.Vector2(( ( e.clientX ) / window.innerWidth ) * 2 - 1, - ( ( e.clientY ) / window.innerHeight ) * 2 + 1);
   raycaster.setFromCamera(mouse, camera);
-  if (selectedTool === 'brush') {
+  if (['brush', 'voxel'].includes(selectedTool)) {
     raycaster.ray.origin.add(raycaster.ray.direction);
   }
 };
@@ -1306,7 +1358,7 @@ const _getObjectMeshIntersections = (raycaster, objectMeshes = [], {hoverMode = 
   return intersections;
 };
 const _updateTool = raycaster => {
-  if (selectedTool === 'brush' || selectedTool === 'erase') {
+  if (['brush', 'voxel', 'erase'].includes(selectedTool)) {
     const targetPosition = raycaster.ray.origin;
     pointerMesh.material.uniforms.targetPos.value.set(
       Math.floor(targetPosition.x*10),
@@ -1317,10 +1369,14 @@ const _updateTool = raycaster => {
       const v = pointerMesh.material.uniforms.targetPos.value;
       if (selectedTool === 'brush') {
         _paintMiningMeshes(v.x+1, v.y+1, v.z+1);
+        _refreshMiningMeshes();
+      } else if (selectedTool === 'voxel') {
+        _voxelMiningMeshes(v.x+1, v.y+1, v.z+1);
+        _refreshVoxelMiningMeshes();
       } else if (selectedTool === 'erase') {
         _eraseMiningMeshes(v.x+1, v.y+1, v.z+1);
+        _refreshMiningMeshes();
       }
-      _refreshMiningMeshes();
     }
   } else if (selectedTool === 'select') {
     if (!toolGrip) {
@@ -1496,6 +1552,10 @@ const _beginTool = (primary, secondary, shiftKey) => {
         const v = pointerMesh.material.uniforms.targetPos.value;
         _paintMiningMeshes(v.x+1, v.y+1, v.z+1);
         _refreshMiningMeshes();
+      } else if (selectedTool === 'voxel') {
+        const v = pointerMesh.material.uniforms.targetPos.value;
+        _voxelMiningMeshes(v.x+1, v.y+1, v.z+1);
+        _refreshVoxelMiningMeshes();
       } else if (selectedTool === 'erase') {
         const v = pointerMesh.material.uniforms.targetPos.value;
         _eraseMiningMeshes(v.x+1, v.y+1, v.z+1);
