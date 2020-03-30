@@ -1,6 +1,6 @@
 import {makePromise} from './util.js';
-import address from './address.js';
-import abi from './abi.js';
+import address from 'https://contracts.webaverse.com/address.js';
+import abi from 'https://contracts.webaverse.com/abi.js';
 
 const contract = {
   instance: null,
