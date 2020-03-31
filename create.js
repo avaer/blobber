@@ -98,22 +98,6 @@ scene.add(directionalLight2);
 const container = new THREE.Object3D();
 scene.add(container);
 
-/* {
-  const parser = new vox.Parser();
-  parser.parse('./cat.vox').then(voxelData => {
-    console.log('parsed', voxelData);
-
-    const builder = new vox.MeshBuilder(voxelData, {
-      originToBottom: false,
-    });
-    const mesh = builder.createMesh();
-    mesh.scale.set(0.1, 0.1, 0.1);
-    mesh.castShadow = true;
-    mesh.receiveShadow = false;
-    container.add(mesh);
-  });
-} */
-
 const orbitControls = new OrbitControls(camera, interfaceDocument.querySelector('.background'), interfaceDocument);
 orbitControls.target.copy(camera.position).add(new THREE.Vector3(0, 0, -1.5));
 orbitControls.screenSpacePanning = true;
