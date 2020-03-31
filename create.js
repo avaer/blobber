@@ -960,6 +960,7 @@ const _makeVoxelMesh = (x, y, z) => {
   const geometry = new THREE.BufferGeometry();
   const material = objectMaterial;
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
   mesh.scale.set(0.1, 0.1, 0.1)
   mesh.frustumCulled = false;
   mesh.visible = false;
@@ -968,41 +969,51 @@ const _makeVoxelMesh = (x, y, z) => {
   mesh.y = y;
   mesh.z = z;
 
-  const voxels = [];
-  const palette = (() => {
+  const voxels = new Uint32Array(PARCEL_SIZE*PARCEL_SIZE*PARCEL_SIZE);
+  const dims = [PARCEL_SIZE, PARCEL_SIZE, PARCEL_SIZE];
+  /* const palette = (() => {
     const palette = Array(256);
     const c = {r: 255, g: 0, b: 0, a: 255};
     for (let i = 0; i < palette.length; i++) {
       palette[i] = c;
     }
     return palette;
-  })();
+  })(); */
   let dirtyPos = false;
   mesh.set = (value, x, y, z) => {
     x -= mesh.x * PARCEL_SIZE;
     y -= mesh.y * PARCEL_SIZE;
     z -= mesh.z * PARCEL_SIZE;
 
-    x /= PARCEL_SIZE;
+    /* x /= PARCEL_SIZE;
     y /= PARCEL_SIZE;
-    z /= PARCEL_SIZE;
+    z /= PARCEL_SIZE; */
 
-    if (!voxels.some(v => v.x === x && v.y === y && v.z === z)) {
-      voxels.push({
-        x,
-        y,
-        z,
-        colorIndex: 0,
-      });
+    const index = x + PARCEL_SIZE*y + PARCEL_SIZE*PARCEL_SIZE*z;
+    voxels[index] = value;
 
-      dirtyPos = true;
-    }
+    dirtyPos = true;
   };
   mesh.refresh = () => {
     if (dirtyPos) {
       dirtyPos = false;
 
-      const voxelData = {
+      const {positions, normals, colors} = tesselate(voxels, dims, {
+        isTransparent() {
+          return false;
+        },
+        isTranslucent() {
+          return false;
+        },
+        getFaceUvs() {
+          throw new Error('not implemented');
+        },
+      });
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      mesh.visible = true;
+      /* const voxelData = {
         size: {
           x: PARCEL_SIZE,
           y: PARCEL_SIZE,
@@ -1018,7 +1029,7 @@ const _makeVoxelMesh = (x, y, z) => {
       mesh.geometry.dispose();
       mesh.geometry = voxelMesh.geometry;
       console.log('new geo', voxelMesh);
-      mesh.visible = true;
+      mesh.visible = true; */
 
       return Promise.resolve(() => {});
 
@@ -1059,8 +1070,8 @@ let miningMeshes = [];
 const _findMeshByIndex = miningMeshes => (x, y, z) => miningMeshes.find(miningMesh => miningMesh.x === x && miningMesh.y === y && miningMesh.z === z);
 const _findOrAddMeshesByContainCoord = (miningMeshes, makeMesh) => (x, y, z) => {
   const result = [];
-  const miningMesh = _findMeshByIndex(miningMeshes)(x, y, z);
-  miningMesh && result.push(miningMesh);
+  /* const miningMesh = _findMeshByIndex(miningMeshes)(x, y, z);
+  miningMesh && result.push(miningMesh); */
   const factor = 1;
   for (let dx = -factor; dx <= factor; dx++) {
     const ax = Math.floor(x + dx*0.5);
@@ -1083,7 +1094,18 @@ const _findOrAddMeshesByContainCoord = (miningMeshes, makeMesh) => (x, y, z) => 
 const _findMiningMeshByIndex = _findMeshByIndex(miningMeshes);
 const _findOrAddMiningMeshesByContainCoord = _findOrAddMeshesByContainCoord(miningMeshes, _makeMiningMesh);
 const _findVoxelMeshByIndex = _findMeshByIndex(voxelMeshes);
-const _findOrAddVoxelMeshesByContainCoord = _findOrAddMeshesByContainCoord(voxelMeshes, _makeVoxelMesh);
+const _findOrAddVoxelMeshByContainCoord = (x, y, z) => {
+  x = Math.floor(x);
+  y = Math.floor(y);
+  z = Math.floor(z);
+  let miningMesh = _findMeshByIndex(voxelMeshes)(x, y, z);
+  if (!miningMesh) {
+    miningMesh = _makeVoxelMesh(x, y, z);
+    scene.add(miningMesh);
+    voxelMeshes.push(miningMesh);
+  }
+  return miningMesh;
+};
 const _newMiningMeshes = () => {
   for (let i = 0; i < miningMeshes.length; i++) {
     const miningMesh = miningMeshes[i];
@@ -1256,10 +1278,8 @@ const _colorMiningMeshes = (x, y, z, c) => {
   });
 };
 const _voxelMiningMeshes = (x, y, z) => {
-  const voxelMeshes = _findOrAddVoxelMeshesByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
-  voxelMeshes.forEach(voxelMesh => {
-    voxelMesh.set(x, y, z);
-  });
+  const voxelMesh = _findOrAddVoxelMeshByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
+  voxelMesh.set(currentColor.getHex(), x, y, z);
 };
 let refreshing = false;
 let refreshQueued = false;
@@ -1513,6 +1533,18 @@ const _handleUpload = async file => {
       container.add(newObjectMesh);
     } */
     // console.log('got gltf', newObjectMeshes);
+  } else if (/\.vox$/.test(file.name)) {
+    const u = URL.createObjectURL(file);
+    const parser = new vox.Parser();
+    const voxelData = await parser.parse(u);
+    const builder = new vox.MeshBuilder(voxelData, {
+      originToBottom: false,
+    });
+    const mesh = builder.createMesh();
+    mesh.scale.set(0.1, 0.1, 0.1);
+    mesh.castShadow = true;
+    mesh.receiveShadow = false;
+    container.add(mesh);
   }
 };
 interfaceDocument.addEventListener('drop', e => {
@@ -1642,7 +1674,7 @@ const _updateTool = raycaster => {
         _paintMiningMeshes(v.x+1, v.y+1, v.z+1);
         _refreshMiningMeshes();
       } else if (selectedTool === 'voxel') {
-        _voxelMiningMeshes(v.x+1, v.y+1, v.z+1);
+        _voxelMiningMeshes(v.x, v.y, v.z);
         _refreshVoxelMiningMeshes();
       } else if (selectedTool === 'erase') {
         _eraseMiningMeshes(v.x+1, v.y+1, v.z+1);
