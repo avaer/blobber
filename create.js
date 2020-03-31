@@ -961,6 +961,7 @@ const _makeVoxelMesh = (x, y, z) => {
   const material = objectMaterial;
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);
+  // mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1));
   mesh.scale.set(0.1, 0.1, 0.1)
   mesh.frustumCulled = false;
   mesh.visible = false;
@@ -1544,6 +1545,10 @@ const _handleUpload = async file => {
       const {r, g, b, a} = paletteObjects[colorIndex];
       // voxels[x + PARCEL_SIZE*y + PARCEL_SIZE*PARCEL_SIZE*z] = (r << 16) | (g << 8) | b;
       // z *= -1;
+      x *= -1;
+      z *= -1;
+      x += PARCEL_SIZE;
+      z += PARCEL_SIZE;
       const voxelMesh = _findOrAddVoxelMeshByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
       const c = (r << 16) | (g << 8) | b;
       voxelMesh.set(c, x, y, z);
