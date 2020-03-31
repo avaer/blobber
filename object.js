@@ -135,6 +135,7 @@ export const objectMaterial = (() => {
     // map: new CheckerBoardTexture(undefined, undefined, 64, 64),
     flatShading: true,
     map: objectTexture,
+    // side: THREE.DoubleSide,
   });
   return material;
 })();
