@@ -2678,13 +2678,12 @@ enterXrButton.addEventListener('click', e => {
     // requestReferenceSpace call will fail if it turns out to be unavailable.
     // ('local' is always available for immersive sessions and doesn't need to
     // be requested separately.)
-    var sessionInit = {
+    navigator.xr.requestSession('immersive-vr', {
       optionalFeatures: [
         'local-floor',
         'bounded-floor',
       ],
-    };
-    navigator.xr.requestSession('immersive-vr', sessionInit).then(onSessionStarted);
+    }).then(onSessionStarted);
   } else {
     currentSession.end();
   }
