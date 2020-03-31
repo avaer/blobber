@@ -1331,7 +1331,7 @@ const _refreshVoxelMiningMeshes = async () => {
     refreshing = false;
     if (refreshQueued) {
       refreshQueued = false;
-      _refreshVoxelMeshes();
+      _refreshVoxelMiningMeshes();
     } else {
       for (let i = 0; i < refreshCbs.length; i++) {
         refreshCbs[i]();
@@ -1534,9 +1534,37 @@ const _handleUpload = async file => {
     } */
     // console.log('got gltf', newObjectMeshes);
   } else if (/\.vox$/.test(file.name)) {
+
     const u = URL.createObjectURL(file);
     const parser = new vox.Parser();
     const voxelData = await parser.parse(u);
+    const {voxels: voxelsObjects, palette: paletteObjects} = voxelData;
+    for (let i = 0; i < voxelsObjects.length; i++) {
+      let {x, y: z, z: y, colorIndex} = voxelsObjects[i];
+      const {r, g, b, a} = paletteObjects[colorIndex];
+      // voxels[x + PARCEL_SIZE*y + PARCEL_SIZE*PARCEL_SIZE*z] = (r << 16) | (g << 8) | b;
+      // z *= -1;
+      const voxelMesh = _findOrAddVoxelMeshByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
+      const c = (r << 16) | (g << 8) | b;
+      voxelMesh.set(c, x, y, z);
+    }
+    _refreshVoxelMiningMeshes();
+    /* const {positions, normals, colors} = tesselate(voxels, dims, {
+      isTransparent() {
+        return false;
+      },
+      isTranslucent() {
+        return false;
+      },
+      getFaceUvs() {
+        throw new Error('not implemented');
+      },
+    });
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    mesh.visible = true;
+
     const builder = new vox.MeshBuilder(voxelData, {
       originToBottom: false,
     });
@@ -1544,7 +1572,7 @@ const _handleUpload = async file => {
     mesh.scale.set(0.1, 0.1, 0.1);
     mesh.castShadow = true;
     mesh.receiveShadow = false;
-    container.add(mesh);
+    container.add(mesh); */
   }
 };
 interfaceDocument.addEventListener('drop', e => {
