@@ -498,9 +498,7 @@ container.add(floorMesh);
   renderer.compile(tempMesh, camera);
 })();
 const _makeMiningMesh = (x, y, z) => {
-  const geometry = new THREE.BufferGeometry();
-  const material = objectMaterial;
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), objectMaterial);
   mesh.frustumCulled = false;
   mesh.visible = false;
   // mesh.token = token;
@@ -647,12 +645,12 @@ const _makeMiningMesh = (x, y, z) => {
         arrayBuffer,
       }, [arrayBuffer]).then(res => () => {
         if (res.positions.length > 0) {
-          geometry.setAttribute('position', new THREE.BufferAttribute(res.positions, 3));
-          geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(res.positions.length*2/3), 2));
-          geometry.setAttribute('color', new THREE.BufferAttribute(res.colors, 3));
-          geometry.deleteAttribute('normal');
-          geometry.setIndex(new THREE.BufferAttribute(res.faces, 1));
-          geometry.computeVertexNormals();
+          mesh.geometry.setAttribute('position', new THREE.BufferAttribute(res.positions, 3));
+          mesh.geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(res.positions.length*2/3), 2));
+          mesh.geometry.setAttribute('color', new THREE.BufferAttribute(res.colors, 3));
+          mesh.geometry.deleteAttribute('normal');
+          mesh.geometry.setIndex(new THREE.BufferAttribute(res.faces, 1));
+          mesh.geometry.computeVertexNormals();
           mesh.visible = true;
         } else {
           mesh.visible = false;
@@ -663,8 +661,8 @@ const _makeMiningMesh = (x, y, z) => {
     }
   };
   mesh.destroy = () => {
-    geometry.dispose();
-    // material.dispose();
+    mesh.geometry.dispose();
+    // mesh.material.dispose();
   };
   return mesh;
 };
