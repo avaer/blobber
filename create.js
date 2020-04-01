@@ -15,7 +15,7 @@ import {makeObjectState, bindObjectScript, tickObjectScript/*, bindObjectShader*
 import {makeId, XRChannelConnection} from './multiplayer.js';
 import {initLocalRig, updatePlayerFromCamera, updatePlayerFromXr, bindPeerConnection} from './peerconnection.js';
 import {GLTFLoader} from './GLTFLoader.js';
-import './vox.js';
+import {VOXLoader, VOXMesh, VOXParser} from './VOXLoader.js';
 
 const _load = () => {
 
@@ -955,9 +955,7 @@ const tesselate = (() => {
   return tesselate;
 })();
 const _makeVoxelMesh = (x, y, z) => {
-  const geometry = new THREE.BufferGeometry();
-  const material = objectMaterial;
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), objectMaterial);
   mesh.position.set(x, y, z);
   // mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1));
   mesh.scale.set(0.1, 0.1, 0.1)
@@ -968,28 +966,18 @@ const _makeVoxelMesh = (x, y, z) => {
   mesh.y = y;
   mesh.z = z;
 
-  const voxels = new Uint32Array(PARCEL_SIZE*PARCEL_SIZE*PARCEL_SIZE);
   const dims = [PARCEL_SIZE, PARCEL_SIZE, PARCEL_SIZE];
-  /* const palette = (() => {
-    const palette = Array(256);
-    const c = {r: 255, g: 0, b: 0, a: 255};
-    for (let i = 0; i < palette.length; i++) {
-      palette[i] = c;
-    }
-    return palette;
-  })(); */
+  const voxMesh = new VOXMesh(dims);
   let dirtyPos = false;
   mesh.set = (value, x, y, z) => {
     x -= mesh.x * PARCEL_SIZE;
     y -= mesh.y * PARCEL_SIZE;
     z -= mesh.z * PARCEL_SIZE;
 
-    /* x /= PARCEL_SIZE;
-    y /= PARCEL_SIZE;
-    z /= PARCEL_SIZE; */
+    /* const index = x + PARCEL_SIZE*y + PARCEL_SIZE*PARCEL_SIZE*z;
+    voxels[index] = value; */
 
-    const index = x + PARCEL_SIZE*y + PARCEL_SIZE*PARCEL_SIZE*z;
-    voxels[index] = value;
+    voxMesh.set(value, x, y, z);
 
     dirtyPos = true;
   };
@@ -997,71 +985,19 @@ const _makeVoxelMesh = (x, y, z) => {
     if (dirtyPos) {
       dirtyPos = false;
 
-      const {positions, normals, colors} = tesselate(voxels, dims, {
-        isTransparent() {
-          return false;
-        },
-        isTranslucent() {
-          return false;
-        },
-        getFaceUvs() {
-          throw new Error('not implemented');
-        },
-      });
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      mesh.visible = true;
-      /* const voxelData = {
-        size: {
-          x: PARCEL_SIZE,
-          y: PARCEL_SIZE,
-          z: PARCEL_SIZE,
-        },
-        voxels,
-        palette,
-      };
-      const builder = new vox.MeshBuilder(voxelData, {
-        originToBottom: false,
-      });
-      const voxelMesh = builder.createMesh();
       mesh.geometry.dispose();
-      mesh.geometry = voxelMesh.geometry;
-      console.log('new geo', voxelMesh);
-      mesh.visible = true; */
+      mesh.geometry = voxMesh.generate().geometry;
+      mesh.visible = true;
 
       return Promise.resolve(() => {});
-
-      /* const arrayBuffer = new ArrayBuffer(300*1024);
-      return mcWorker.request({
-        method: 'march',
-        dims,
-        potential,
-        brush,
-        shift,
-        scale,
-        arrayBuffer,
-      }, [arrayBuffer]).then(res => () => {
-        if (res.positions.length > 0) {
-          geometry.setAttribute('position', new THREE.BufferAttribute(res.positions, 3));
-          geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(res.positions.length*2/3), 2));
-          geometry.setAttribute('color', new THREE.BufferAttribute(res.colors, 3));
-          geometry.deleteAttribute('normal');
-          geometry.setIndex(new THREE.BufferAttribute(res.faces, 1));
-          geometry.computeVertexNormals();
-          mesh.visible = true;
-        } else {
-          mesh.visible = false;
-        }
-      }); */
     } else {
       return Promise.resolve(() => {});
     }
   };
 
   mesh.destroy = () => {
-    geometry.dispose();
-    // material.dispose();
+    mesh.geometry.dispose();
+    // this.mesh.material.dispose();
   };
   return mesh;
 };
@@ -1533,22 +1469,13 @@ const _handleUpload = async file => {
     } */
     // console.log('got gltf', newObjectMeshes);
   } else if (/\.vox$/.test(file.name)) {
-
     const u = URL.createObjectURL(file);
-    const parser = new vox.Parser();
-    const voxelData = await parser.parse(u);
-    const {voxels: voxelsObjects, palette: paletteObjects} = voxelData;
-    for (let i = 0; i < voxelsObjects.length; i++) {
-      let {x, y: z, z: y, colorIndex} = voxelsObjects[i];
-      const {r, g, b, a} = paletteObjects[colorIndex];
-      // voxels[x + PARCEL_SIZE*y + PARCEL_SIZE*PARCEL_SIZE*z] = (r << 16) | (g << 8) | b;
-      // z *= -1;
-      x *= -1;
-      z *= -1;
-      x += PARCEL_SIZE;
-      z += PARCEL_SIZE;
+    const dims = [PARCEL_SIZE, PARCEL_SIZE, PARCEL_SIZE];
+    const parser = new VOXParser(dims);
+    const voxels = await parser.parse(u);
+    for (let i = 0; i < voxels.length; i++) {
+      const [x, y, z, c] = voxels[i];
       const voxelMesh = _findOrAddVoxelMeshByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
-      const c = (r << 16) | (g << 8) | b;
       voxelMesh.set(c, x, y, z);
     }
     _refreshVoxelMiningMeshes();
