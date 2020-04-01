@@ -1214,7 +1214,7 @@ const _colorMiningMeshes = (x, y, z, c) => {
 };
 const _voxelMiningMeshes = (x, y, z) => {
   const voxelMesh = _findOrAddVoxelMeshByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
-  voxelMesh.set(currentColor.getHex(), x, y, z);
+  voxelMesh.set((currentColor.getHex() << 8) | 255, x, y, z);
 };
 let refreshing = false;
 let refreshQueued = false;
