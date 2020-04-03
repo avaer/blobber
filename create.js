@@ -169,19 +169,19 @@ const pointerMesh = (() => {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.targetPos = new THREE.Vector3();
   mesh.frustumCulled = false;
-  const size = [0, 0, 0, 0, 0, 0];
-  mesh.getSize = () => size;
+  // const size = [0, 0, 0, 0, 0, 0];
+  // mesh.getSize = () => size;
   mesh.resize = (minX, minY, minZ, maxX, maxY, maxZ) => {
     if (minX < maxX && minY < maxY && minZ < maxZ) {
       mesh.geometry = sidesGeometry.clone()
         .applyMatrix4(new THREE.Matrix4().makeScale(maxX - minX, maxY - minY, maxZ - minZ));
     }
-    size[0] = minX;
+    /* size[0] = minX;
     size[1] = minY;
     size[2] = minZ;
     size[3] = maxX;
     size[4] = maxY;
-    size[5] = maxZ;
+    size[5] = maxZ; */
   };
   mesh.resize(0, 0, 0, 1, 1, 1);
   return mesh;
@@ -2500,7 +2500,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
   const p = makePromise();
   const instance = await contract.getInstance();
   const account = await contract.getAccount();
-  const size = pointerMesh.getSize();
+  // const size = pointerMesh.getSize();
   instance.mint([size[3] - size[0], size[4] - size[1], size[5] - size[2]], 'hash', metadataHash, {
     from: account,
  // value: '1000000000000000000', // 1 ETH
