@@ -145,8 +145,8 @@ const pointerMesh = (() => {
       .applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(-1, 1, 0).normalize(), new THREE.Vector3(1, -1, 0).normalize())))
       .applyMatrix4(new THREE.Matrix4().makeTranslation(0.5, -0.5, 0.5)),
   ]).applyMatrix4(new THREE.Matrix4().makeTranslation(0.5, 0.5, 0.5));
-  const sidesColors = new Float32Array(sidesGeometry.attributes.position.array.length);
-  sidesGeometry.setAttribute('color', new THREE.BufferAttribute(sidesColors, 3));
+  // const sidesColors = new Float32Array(sidesGeometry.attributes.position.array.length);
+  // sidesGeometry.setAttribute('color', new THREE.BufferAttribute(sidesColors, 3));
   /* const dotsGeometries = [];
   const dotGeometry = new THREE.BoxBufferGeometry(0.01, 0.01, 0.01);
   for (let x = 0; x <= PARCEL_SIZE; x++) {
