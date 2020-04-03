@@ -1166,7 +1166,7 @@ const _screenshotMiningMeshes = async () => {
   for (let i = 0; i < objectMeshes.length; i++) {
     newScene.add(objectMeshes[i]);
   }
-  newScene.add(pointerMesh);
+  // newScene.add(pointerMesh);
 
   const width = 256;
   const height = width;
@@ -1188,7 +1188,7 @@ const _screenshotMiningMeshes = async () => {
   for (let i = 0; i < objectMeshes.length; i++) {
     container.add(objectMeshes[i]);
   }
-  container.add(pointerMesh);
+  // container.add(pointerMesh);
 
   const blob = await new Promise((accept, reject) => {
     gif.on('finished', accept);
