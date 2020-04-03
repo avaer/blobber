@@ -3248,9 +3248,9 @@ renderer.setAnimationLoop(animate);
   } else if (o) {
     const metadata = await fetch(`${apiHost}/${o}`)
       .then(res => res.json());
-    const {objectName, dataHash} = metadata;
+    const {objectName, modelHash} = metadata;
     objectNameEl.value = objectName;
-    const arrayBuffer = await fetch(`${apiHost}/${dataHash}`)
+    const arrayBuffer = await fetch(`${apiHost}/${modelHash}`)
       .then(res => res.arrayBuffer());
     for (let i = 0; i < objectMeshes.length; i++) {
       const objectMesh = objectMeshes[i];
