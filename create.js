@@ -11,7 +11,7 @@ import contract from './contract.js';
 import screenshot from './screenshot.js';
 import {objectImage, objectMaterial, makeObjectMeshFromGeometry, loadObjectMeshes, saveObjectMeshes} from './object.js';
 import {createAction, execute, pushAction, undo, redo, clearHistory} from './actions.js';
-import {makeObjectState, bindObjectScript, tickObjectScript/*, bindObjectShader*/} from './runtime.js';
+import {makeObjectState, /*bindObjectScript,*/ tickObjectScript/*, bindObjectShader*/} from './runtime.js';
 import {makeId, XRChannelConnection} from './multiplayer.js';
 import {initLocalRig, updatePlayerFromCamera, updatePlayerFromXr, bindPeerConnection} from './peerconnection.js';
 import {GLTFLoader} from './GLTFLoader.js';
@@ -2222,7 +2222,7 @@ Array.from(tools).forEach((tool, i) => {
       _commitMiningMeshes();
     } else if (tool.matches('[tool=image]')) {
       // nothing
-    } else if (tool.matches('[sidebar]')) {
+    /* } else if (tool.matches('[sidebar]')) {
       const wasOpen = tool.classList.contains('open');
 
       Array.from(tools)
@@ -2233,18 +2233,15 @@ Array.from(tools).forEach((tool, i) => {
       [
         'script-input',
         'contract-input',
-        // 'shader-input',
       ].forEach(id => interfaceDocument.getElementById(id).classList.remove('open'));
 
       if (tool.matches('[tool=script]')) {
         interfaceDocument.getElementById('script-input').classList.toggle('open', !wasOpen);
       } else if (tool.matches('[tool=contract]')) {
         interfaceDocument.getElementById('contract-input').classList.toggle('open', !wasOpen);
-      } /* else if (tool.matches('[tool=shader]')) {
-        interfaceDocument.getElementById('shader-input').classList.toggle('open', !wasOpen);
-      } */
+      }
 
-      tool.classList.toggle('open', !wasOpen);
+      tool.classList.toggle('open', !wasOpen); */
     } else if (tool.matches('[tool=center]')) {
       _cancel();
       _centerObjectMeshes();
@@ -2310,7 +2307,7 @@ const _bindUploadFileButton = (inputFileEl, handleUpload) => {
 };
 _bindUploadFileButton(Array.from(tools).find(tool => tool.matches('[tool=image]')).querySelector('input[type=file]'), _handleUpload);
 
-interfaceDocument.getElementById('script-input').addEventListener('mousedown', e => {
+/* interfaceDocument.getElementById('script-input').addEventListener('mousedown', e => {
   e.stopPropagation();
 });
 const scriptInputTextarea = interfaceDocument.getElementById('script-input-textarea');
@@ -2372,9 +2369,6 @@ contract RealityScript is IRealityScript {
             z = (x / z + z) / 2;
         }
     }
-  /* function collides(Transform memory p1, Transform memory p2) internal pure returns (bool) {
-      return sqrt(abs(p1.x - p2.x)**2 + abs(p1.y - p2.y)**2 + abs(p1.z - p2.z)**2) <= 1;
-  } */
   function stringEquals(string memory a, string memory b) internal pure returns (bool) {
       return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))) );
   }
@@ -2424,44 +2418,8 @@ contract RealityScript is IRealityScript {
   }
 }
 `;
-/* contractInputTextarea.value = `
-contract RealityScript {
-  uint256 id;
-  constructor(uint256 _id) public {
-    id = _id;
-  }
-  function f() public view returns (uint256) {
-    return id;
-  }
-}
-`; */
-/* contractInputTextarea.addEventListener('input', e => {
-  if (scriptsBound) {
-    bindObjectScript(objectState, e.target.value, objectMeshes);
-  }
-}); */
 contractInputTextarea.addEventListener('keydown', e => {
   e.stopPropagation();
-});
-
-/* interfaceDocument.getElementById('shader-input').addEventListener('mousedown', e => {
-  e.stopPropagation();
-});
-const shaderInputV = interfaceDocument.getElementById('shader-input-v');
-shaderInputV.value = objectMaterial.program.vertexShader.source;
-shaderInputV.addEventListener('keydown', e => {
-  e.stopPropagation();
-});
-shaderInputV.addEventListener('input', e => {
-  bindObjectShader(objectMeshes, shaderInputV.value, shaderInputF.value);
-});
-const shaderInputF = interfaceDocument.getElementById('shader-input-f');
-shaderInputF.value = objectMaterial.program.fragmentShader.source;
-shaderInputF.addEventListener('keydown', e => {
-  e.stopPropagation();
-});
-shaderInputF.addEventListener('input', e => {
-  bindObjectShader(objectMeshes, shaderInputV.value, shaderInputF.value);
 }); */
 
 const objectNameEl = interfaceDocument.getElementById('object-name');
@@ -2485,7 +2443,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
     modelArrayBuffer,
   ] = await Promise.all([
     _screenshotMiningMeshes(),
-    saveObjectMeshes(objectMeshes, scriptInputTextarea.value/*, shaderInputV.value, shaderInputF.value*/),
+    saveObjectMeshes(objectMeshes),
   ]);
   const dataUint8Array = XRPackage.compileRaw([
     {
@@ -2582,33 +2540,24 @@ _bindUploadFileButton(interfaceDocument.getElementById('load-op-input'), file =>
       objectMesh.destroy();
     }
     objectMeshes.length = 0;
-    const {objectMeshes: newObjectMeshes, script/*, shader: {vertex, fragment}*/} = await loadObjectMeshes(arrayBuffer);
+    const {objectMeshes: newObjectMeshes/*, script*/} = await loadObjectMeshes(arrayBuffer);
     objectMeshes.length = newObjectMeshes.length;
     for (let i = 0; i < newObjectMeshes.length; i++) {
       const newObjectMesh = newObjectMeshes[i];
       objectMeshes[i] = newObjectMesh;
       container.add(newObjectMesh);
     }
-    if (script) {
+    /* if (script) {
       scriptInputTextarea.value = script;
       if (scriptsBound) {
         bindObjectScript(objectState, script, objectMeshes);
       }
-    }
-    /* if (vertex) {
-      shaderInputV.value = vertex;
-    }
-    if (fragment) {
-      shaderInputF.value = fragment;
-    }
-    if (vertex || fragment) {
-      bindObjectShader(objectMeshes, vertex, fragment);
     } */
   };
   r.readAsArrayBuffer(file);
 });
 interfaceDocument.getElementById('save-op').addEventListener('click', async e => {
-  const arrayBuffer = await saveObjectMeshes(objectMeshes, scriptInputTextarea.value/*, shaderInputV.value, shaderInputF.value*/);
+  const arrayBuffer = await saveObjectMeshes(objectMeshes/*, scriptInputTextarea.value*/);
   const blob = new Blob([arrayBuffer], {
     type: 'model/gltf.binary',
   });
@@ -2666,7 +2615,7 @@ worldScaleEl.addEventListener('input', e => {
   interfaceDocument.getElementById('world-scale-text').innerHTML = worldScale;
 });
 
-let scriptsBound = false;
+/* let scriptsBound = false;
 interfaceDocument.getElementById('enable-scripts-button').addEventListener('click', e => {
   e.preventDefault();
   e.stopPropagation();
@@ -2694,7 +2643,7 @@ interfaceDocument.getElementById('enable-scripts-button').addEventListener('clic
       objectMesh.originalScale = null;
     }
   }
-});
+}); */
 
 let physicsBound = false;
 interfaceDocument.getElementById('enable-physics-button').addEventListener('click', e => {
@@ -3190,20 +3139,11 @@ renderer.setAnimationLoop(animate);
       objectMeshes[i] = newObjectMesh;
       container.add(newObjectMesh);
     }
-    if (script) {
+    /* if (script) {
       scriptInputTextarea.value = script;
       if (scriptsBound) {
         bindObjectScript(objectState, script, objectMeshes);
       }
-    }
-    /* if (vertex) {
-      shaderInputV.value = vertex;
-    }
-    if (fragment) {
-      shaderInputF.value = fragment;
-    }
-    if (vertex || fragment) {
-      bindObjectShader(objectMeshes, vertex, fragment);
     } */
   }
 })();

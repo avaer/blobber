@@ -152,6 +152,9 @@ export function makeObjectMeshFromGeometry(geometry, texture, matrix) {
   }
   objectMesh.frustumCulled = false;
   objectMesh.castShadow = true;
+  objectMesh.userData.gltfExtensions = {
+    standardObject: true,
+  };
   objectMesh.worker = null;
   objectMesh.destroy = () => {
     objectMesh.geometry.dispose();
@@ -164,13 +167,8 @@ export function makeObjectMeshFromGeometry(geometry, texture, matrix) {
   };
   return objectMesh;
 };
-export async function saveObjectMeshes(objectMeshes, script) {
+export async function saveObjectMeshes(objectMeshes) {
   const exportScene = new THREE.Scene();
-  exportScene.userData.gltfExtensions = {
-    script: {
-      source: script,
-    },
-  };
   for (let i = 0; i < objectMeshes.length; i++) {
     exportScene.add(objectMeshes[i].clone());
   }
@@ -207,9 +205,23 @@ export async function loadObjectMeshes(s) {
   loader.load(src, p.accept, function onProgress() {}, p.reject);
   const o = await p;
   const {scene} = o;
-  const {userData: {gltfExtensions}} = scene;
+  const objectMeshes = scene.children.map(child => {
+    if (child.userData && child.userData.gltfExtensions && child.userData.gltfExtensions.standardObject) {
+      return makeObjectMeshFromGeometry(child.geometry, child.material.map, child.matrix);
+    } else {
+      child.destroy = () => {
+        child.traverse(o => {
+          if (o.isMesh) {
+            o.geometry.dispose();
+            o.material.dispose();
+          }
+        });
+      };
+      return child;
+    }
+  });
   return {
-    objectMeshes: scene.children.map(child => makeObjectMeshFromGeometry(child.geometry, child.material.map, child.matrix)),
-    script: (gltfExtensions && gltfExtensions.script.source && typeof gltfExtensions.script.source === 'string') ? gltfExtensions.script.source : null,
+    objectMeshes,
+    // script: (gltfExtensions && gltfExtensions.script.source && typeof gltfExtensions.script.source === 'string') ? gltfExtensions.script.source : null,
   };
 };
