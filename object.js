@@ -136,6 +136,7 @@ export const objectMaterial = (() => {
     flatShading: true,
     map: objectTexture,
     // side: THREE.DoubleSide,
+    transparent: true,
   });
   return material;
 })();
