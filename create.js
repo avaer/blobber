@@ -146,10 +146,8 @@ const pointerMesh = (() => {
       .applyMatrix4(new THREE.Matrix4().makeTranslation(0.5, -0.5, 0.5)),
   ]).applyMatrix4(new THREE.Matrix4().makeTranslation(0.5, 0.5, 0.5));
   const sidesColors = new Float32Array(sidesGeometry.attributes.position.array.length);
-  // sidesColors.fill(0);
   sidesGeometry.setAttribute('color', new THREE.BufferAttribute(sidesColors, 3));
-  // const numSidesPositions = sidesGeometry.attributes.position.array.length;
-  const dotsGeometries = [];
+  /* const dotsGeometries = [];
   const dotGeometry = new THREE.BoxBufferGeometry(0.01, 0.01, 0.01);
   for (let x = 0; x <= PARCEL_SIZE; x++) {
     for (let y = 0; y <= PARCEL_SIZE; y++) {
@@ -163,91 +161,20 @@ const pointerMesh = (() => {
   const dotsGeometry = BufferGeometryUtils.mergeBufferGeometries(dotsGeometries);
   const dotsColors = new Float32Array(dotsGeometry.attributes.position.array.length);
   dotsColors.fill(0.7);
-  dotsGeometry.setAttribute('color', new THREE.BufferAttribute(dotsColors, 3));
+  dotsGeometry.setAttribute('color', new THREE.BufferAttribute(dotsColors, 3)); */
   let geometry;
-  const targetVsh = `
-    uniform vec3 targetPos;
-    attribute vec3 color;
-    // varying float vZ;
-    // varying vec2 vUv;
-    varying vec3 vColor;
-    varying float highlightDistance;
-    float scale = 0.1;
-    void main() {
-      vec4 p = modelMatrix * vec4(position, 1.);
-      vec4 p2 = viewMatrix * p;
-      // vZ = -p2.z;
-      gl_Position = projectionMatrix * p2;
-      vColor = color;
-      vec3 tp = targetPos.xyz + 1.0;
-      vec3 cp = p.xyz/scale;
-      float dx = tp.x - cp.x;
-      float dy = tp.y - cp.y;
-      float dz = tp.z - cp.z;
-      highlightDistance = pow(sqrt(dx*dx + dy*dy + dz*dz), 0.5);
-    }
-  `;
-  const targetFsh = `
-    // uniform float uTime;
-    uniform vec3 uBrushColor;
-    varying vec3 vColor;
-    // varying float vZ;
-    varying float highlightDistance;
-    float dRange = 1.3;
-    float dLimit = 0.1;
-    void main() {
-      if (vColor.r == 0.0 && vColor.g == 0.0 && vColor.b == 0.0) {
-        gl_FragColor = vec4(vColor, 1.0);
-      } else {
-        // gl_FragColor = vec4(highlightDistance, 0, 0, 1.0);
-        float d = max(dRange - highlightDistance, dLimit);
-        if (d > dLimit) {
-          gl_FragColor = vec4(uBrushColor, d);
-        } else {
-          gl_FragColor = vec4(vec3(vColor), d);
-        }
-      }
-    }
-  `;
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      targetPos: {
-        type: 'v3',
-        value: new THREE.Vector3(),
-      },
-      uBrushColor: {
-        type: 'v3',
-        value: new THREE.Vector3(),
-      },
-      uTime: {
-        type: 'f',
-        value: 0,
-      },
-    },
-    vertexShader: targetVsh,
-    fragmentShader: targetFsh,
-    transparent: true,
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x000000,
   });
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.targetPos = new THREE.Vector3();
   mesh.frustumCulled = false;
   const size = [0, 0, 0, 0, 0, 0];
   mesh.getSize = () => size;
   mesh.resize = (minX, minY, minZ, maxX, maxY, maxZ) => {
     if (minX < maxX && minY < maxY && minZ < maxZ) {
-      const geometries = [
-        sidesGeometry.clone()
-          .applyMatrix4(new THREE.Matrix4().makeScale(maxX - minX, maxY - minY, maxZ - minZ)),
-      ];
-      for (let ay = minY; ay < maxY; ay++) {
-        for (let ax = minX; ax < maxX; ax++) {
-          for (let az = minZ; az < maxZ; az++) {
-            const newBlockGeometry = dotsGeometry.clone()
-              .applyMatrix4(new THREE.Matrix4().makeTranslation(ax, ay, az));
-            geometries.push(newBlockGeometry);
-          }
-        }
-      }
-      mesh.geometry = BufferGeometryUtils.mergeBufferGeometries(geometries);
+      mesh.geometry = sidesGeometry.clone()
+        .applyMatrix4(new THREE.Matrix4().makeScale(maxX - minX, maxY - minY, maxZ - minZ));
     }
     size[0] = minX;
     size[1] = minY;
@@ -1622,13 +1549,13 @@ const _getObjectMeshIntersections = (raycaster, objectMeshes = [], {hoverMode = 
 const _updateTool = raycaster => {
   if (['brush', 'voxel', 'erase'].includes(selectedTool)) {
     const targetPosition = raycaster.ray.origin;
-    pointerMesh.material.uniforms.targetPos.value.set(
+    pointerMesh.targetPos.set(
       Math.floor(targetPosition.x*10),
       Math.floor(targetPosition.y*10),
       Math.floor(targetPosition.z*10)
     );
     if (toolDown) {
-      const v = pointerMesh.material.uniforms.targetPos.value;
+      const v = pointerMesh.targetPos;
       if (selectedTool === 'brush') {
         _paintMiningMeshes(v.x+1, v.y+1, v.z+1);
         _refreshMiningMeshes();
@@ -1811,15 +1738,15 @@ const _beginTool = (primary, secondary, shiftKey) => {
       // nothing
     } else {
       if (selectedTool === 'brush') {
-        const v = pointerMesh.material.uniforms.targetPos.value;
+        const v = pointerMesh.targetPos;
         _paintMiningMeshes(v.x+1, v.y+1, v.z+1);
         _refreshMiningMeshes();
       } else if (selectedTool === 'voxel') {
-        const v = pointerMesh.material.uniforms.targetPos.value;
+        const v = pointerMesh.targetPos;
         _voxelMiningMeshes(v.x+1, v.y+1, v.z+1);
         _refreshVoxelMiningMeshes();
       } else if (selectedTool === 'erase') {
-        const v = pointerMesh.material.uniforms.targetPos.value;
+        const v = pointerMesh.targetPos;
         _eraseMiningMeshes(v.x+1, v.y+1, v.z+1);
         _refreshMiningMeshes();
       /* } else if (selectedTool === 'select') {
@@ -2702,7 +2629,6 @@ Array.from(colors).forEach(color => {
       color.classList.remove('selected');
     });
     currentColor = new THREE.Color().setStyle(inner.style.backgroundColor);
-    pointerMesh.material.uniforms.uBrushColor.value.set(currentColor.r, currentColor.g, currentColor.b);
     color.classList.add('selected');
     
     uiMesh.update();
@@ -2710,7 +2636,6 @@ Array.from(colors).forEach(color => {
 });
 let currentColor = new THREE.Color().setStyle(colors[0].querySelector('.inner').style.backgroundColor);
 colors[0].classList.add('selected');
-pointerMesh.material.uniforms.uBrushColor.value.set(currentColor.r, currentColor.g, currentColor.b);
 
 const brushSizeEl = interfaceDocument.getElementById('brush-size');
 let brushSize = brushSizeEl.value;
