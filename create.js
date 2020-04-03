@@ -16,6 +16,7 @@ import {makeId, XRChannelConnection} from './multiplayer.js';
 import {initLocalRig, updatePlayerFromCamera, updatePlayerFromXr, bindPeerConnection} from './peerconnection.js';
 import {GLTFLoader} from './GLTFLoader.js';
 import {VOXLoader, VOXMesh, VOXParser} from './VOXLoader.js';
+import {XRPackage} from 'https://xrpackage.org/xrpackage.js'
 
 const _load = () => {
 
@@ -2547,32 +2548,54 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
   e.preventDefault();
   e.stopPropagation();
 
-  const compiledContract = _compileContract(interfaceDocument.getElementById('contract-input-textarea').value);
-  console.log('got contract', compiledContract);
+  // const compiledContract = _compileContract(interfaceDocument.getElementById('contract-input-textarea').value);
+  // console.log('got contract', compiledContract);
 
   await _commitMiningMeshes();
   _centerObjectMeshes();
   const [
-    dataArrayBuffer,
     screenshotBlob,
+    modelArrayBuffer,
   ] = await Promise.all([
-    saveObjectMeshes(objectMeshes, scriptInputTextarea.value/*, shaderInputV.value, shaderInputF.value*/),
     _screenshotMiningMeshes(),
+    saveObjectMeshes(objectMeshes, scriptInputTextarea.value/*, shaderInputV.value, shaderInputF.value*/),
+  ]);
+  const dataUint8Array = XRPackage.compileRaw([
+    {
+      url: '/model.gltf',
+      type: 'application/octet-stream',
+      data: new Uint8Array(modelArrayBuffer),
+    },
+    {
+      url: '/manifest.json',
+      type: 'application/json',
+      data: JSON.stringify({
+        xr_type: 'gltf@0.0.1',
+        xr_main: 'model.gltf',
+      }, null, 2),
+    }
   ]);
 
   const [
     dataHash,
     screenshotHash,
+    modelHash,
   ] = await Promise.all([
     fetch(`${apiHost}/`, {
       method: 'PUT',
-      body: dataArrayBuffer,
+      body: dataUint8Array,
     })
       .then(res => res.json())
       .then(j => j.hash),
     fetch(`${apiHost}/`, {
       method: 'PUT',
       body: screenshotBlob,
+    })
+      .then(res => res.json())
+      .then(j => j.hash),
+    fetch(`${apiHost}/`, {
+      method: 'PUT',
+      body: modelArrayBuffer,
     })
       .then(res => res.json())
       .then(j => j.hash),
@@ -2583,6 +2606,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
       objectName: objectNameEl.value,
       dataHash,
       screenshotHash,
+      modelHash,
     }),
   })
     .then(res => res.json())
@@ -2592,7 +2616,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
   const instance = await contract.getInstance();
   const account = await contract.getAccount();
   const size = pointerMesh.getSize();
-  instance.mint([size[3] - size[0], size[4] - size[1], size[5] - size[2]], '0x' + compiledContract.bytecode, 'hash', metadataHash, {
+  instance.mint([size[3] - size[0], size[4] - size[1], size[5] - size[2]], 'hash', metadataHash, {
     from: account,
  // value: '1000000000000000000', // 1 ETH
     value: '10000000000000000', // 0.01 ETH
