@@ -188,7 +188,7 @@ const pointerMesh = (() => {
 })();
 container.add(pointerMesh);
 
-const _compileContract = (() => {
+/* const _compileContract = (() => {
   const compiler = wrapper(Module);
   return source => {
     const input = {
@@ -226,18 +226,13 @@ const _compileContract = (() => {
       }
     }
     const error = errors.map(e => e.formattedMessage).join('\n');
-    /* for (let i = 0; i < errors.length; i++) {
-      const error = errors[i];
-      const {formattedMessage} = error;
-      console.log('got formatted message', formattedMessage);
-    } */
     if (result) {
       return result;
     } else {
       throw error;
     }
   };
-})();
+})(); */
 
 const _makeWasmWorker = () => {
   let cbs = [];
