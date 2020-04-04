@@ -76,7 +76,7 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xEEEEEE);
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0.5, 0.5, 2);
+camera.position.set(0, 0.5, 1.5);
 camera.rotation.order = 'YXZ';
 renderer.render(scene, camera);
 
@@ -144,7 +144,7 @@ const pointerMesh = (() => {
     targetGeometry.clone()
       .applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(-1, 1, 0).normalize(), new THREE.Vector3(1, -1, 0).normalize())))
       .applyMatrix4(new THREE.Matrix4().makeTranslation(0.5, -0.5, 0.5)),
-  ]).applyMatrix4(new THREE.Matrix4().makeTranslation(0.5, 0.5, 0.5));
+  ]).applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0.5, 0));
   // const sidesColors = new Float32Array(sidesGeometry.attributes.position.array.length);
   // sidesGeometry.setAttribute('color', new THREE.BufferAttribute(sidesColors, 3));
   /* const dotsGeometries = [];
@@ -187,6 +187,7 @@ const pointerMesh = (() => {
   return mesh;
 })();
 container.add(pointerMesh);
+window.pointerMesh = pointerMesh;
 
 /* const _compileContract = (() => {
   const compiler = wrapper(Module);
@@ -1051,7 +1052,7 @@ const _centerObjectMeshes = () => {
   }
   const center = box.getCenter(new THREE.Vector3());
   center.sub(new THREE.Vector3(0, 0.5, 0));
-  if (box.max.x - box.min.x < 1) {
+  /* if (box.max.x - box.min.x < 1) {
     center.sub(new THREE.Vector3(0.5, 0, 0));
   } else {
     center.x -= Math.ceil(box.max.x - box.min.x - 1);
@@ -1060,10 +1061,12 @@ const _centerObjectMeshes = () => {
     center.sub(new THREE.Vector3(0, 0, 0.5));
   } else {
     center.z -= Math.ceil(box.max.z - box.min.z - 1);
-  }
+  } */
   for (let i = 0; i < objectMeshes.length; i++) {
     objectMeshes[i].position.sub(center);
   }
+  
+  center.sub(new THREE.Vector3(0.5, 0, 0.5));
 
   const gridBox = box.clone();
   gridBox.min.sub(center);
@@ -1092,7 +1095,7 @@ const _screenshotMiningMeshes = async () => {
 
   const width = 256;
   const height = width;
-  const center = new THREE.Vector3(0.5, 0.5, 0.5);
+  const center = new THREE.Vector3(); // new THREE.Vector3(0.5, 0.5, 0.5);
   const gif = new GIF({
     workers: 2,
     quality: 10,
@@ -3027,7 +3030,7 @@ const uiMesh = (() => {
 
   return mesh;
 })();
-uiMesh.position.set(0.5, 0.5, 1);
+uiMesh.position.set(0, 0.5, 0.5);
 scene.add(uiMesh);
 
 const velocity = new THREE.Vector3();
