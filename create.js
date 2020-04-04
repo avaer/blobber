@@ -2501,7 +2501,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
   const instance = await contract.getInstance();
   const account = await contract.getAccount();
   // const size = pointerMesh.getSize();
-  instance.mint('hash', metadataHash, {
+  instance.mint(1, 'hash', metadataHash, {
     from: account,
     // value: '1000000000000000000', // 1 ETH
     // value: '10000000000000000', // 0.01 ETH
