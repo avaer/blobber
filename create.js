@@ -1038,6 +1038,28 @@ const _commitMiningMeshes = async () => {
     commitQueued = true;
   }
 };
+const _commitVoxelMiningMeshes = async () => {
+  if (voxelMeshes.length > 0) {
+    const [voxelMesh] = voxelMeshes;
+    voxelMesh.geometry = BufferGeometryUtils.mergeBufferGeometries(voxelMeshes.map(m => {
+      m.updateMatrixWorld();
+      return m.geometry.applyMatrix4(m.matrixWorld).applyMatrix4(new THREE.Matrix4().makeScale(PARCEL_SIZE, PARCEL_SIZE, PARCEL_SIZE));
+    }));
+    voxelMesh.position.set(0, 0, 0);
+
+    for (let i = 0; i < voxelMeshes.length; i++) {
+      scene.remove(voxelMeshes[i]);
+    }
+    voxelMeshes.length = 0;
+
+    const action = createAction('addObjects', {
+      newObjectMeshes: [voxelMesh],
+      container,
+      objectMeshes,
+    });
+    execute(action);
+  }
+};
 const _centerObjectMeshes = () => {
   const box = new THREE.Box3();
   for (let i = 0; i < objectMeshes.length; i++) {
@@ -1405,6 +1427,7 @@ const _handleUpload = async file => {
       voxelMesh.set(c, x, y, z);
     }
     _refreshVoxelMiningMeshes();
+    _commitVoxelMiningMeshes();
     /* const {positions, normals, colors} = tesselate(voxels, dims, {
       isTransparent() {
         return false;
