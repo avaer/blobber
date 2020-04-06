@@ -1041,15 +1041,22 @@ const _commitMiningMeshes = async () => {
 const _commitVoxelMiningMeshes = async () => {
   if (voxelMeshes.length > 0) {
     const [voxelMesh] = voxelMeshes;
+    const center = (() => {
+      const o = new THREE.Object3D();
+      for (let i = 0; i < voxelMeshes.length; i++) {
+        o.add(voxelMeshes[i]);
+      }
+      return new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+    })();
     voxelMesh.geometry = BufferGeometryUtils.mergeBufferGeometries(voxelMeshes.map(m => {
-      m.updateMatrixWorld();
-      return m.geometry.applyMatrix4(m.matrixWorld).applyMatrix4(new THREE.Matrix4().makeScale(PARCEL_SIZE, PARCEL_SIZE, PARCEL_SIZE));
+      // m.updateMatrixWorld();
+      return m.geometry.clone().applyMatrix4(new THREE.Matrix4().makeTranslation(m.position.x/m.scale.x - center.x/m.scale.x, m.position.y/m.scale.y - center.y/m.scale.y, m.position.z/m.scale.z - center.z/m.scale.z));
     }));
-    voxelMesh.position.set(0, 0, 0);
+    voxelMesh.position.copy(center);
 
-    for (let i = 0; i < voxelMeshes.length; i++) {
+    /* for (let i = 0; i < voxelMeshes.length; i++) {
       scene.remove(voxelMeshes[i]);
-    }
+    } */
     voxelMeshes.length = 0;
 
     const action = createAction('addObjects', {
@@ -1418,40 +1425,16 @@ const _handleUpload = async file => {
     // console.log('got gltf', newObjectMeshes);
   } else if (/\.vox$/.test(file.name)) {
     const u = URL.createObjectURL(file);
-    const dims = [PARCEL_SIZE, PARCEL_SIZE, PARCEL_SIZE];
-    const parser = new VOXParser(dims);
-    const voxels = await parser.parse(u);
-    for (let i = 0; i < voxels.length; i++) {
-      const [x, y, z, c] = voxels[i];
-      const voxelMesh = _findOrAddVoxelMeshByContainCoord(x/PARCEL_SIZE, y/PARCEL_SIZE, z/PARCEL_SIZE);
-      voxelMesh.set(c, x, y, z);
-    }
-    _refreshVoxelMiningMeshes();
-    _commitVoxelMiningMeshes();
-    /* const {positions, normals, colors} = tesselate(voxels, dims, {
-      isTransparent() {
-        return false;
-      },
-      isTranslucent() {
-        return false;
-      },
-      getFaceUvs() {
-        throw new Error('not implemented');
-      },
-    });
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    mesh.visible = true;
 
-    const builder = new vox.MeshBuilder(voxelData, {
-      originToBottom: false,
-    });
-    const mesh = builder.createMesh();
-    mesh.scale.set(0.1, 0.1, 0.1);
-    mesh.castShadow = true;
-    mesh.receiveShadow = false;
-    container.add(mesh); */
+    const p = makePromise();
+    const loader = new VOXLoader();
+    loader.load(u, p.accept, function onProgress() {}, p.reject);
+    const objectMesh = await p;
+    objectMesh.position.copy(camera.position)
+      .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+    objectMesh.quaternion.copy(camera.quaternion);
+    container.add(objectMesh);
+    objectMeshes.push(objectMesh);
   }
 };
 interfaceDocument.addEventListener('drop', e => {
@@ -2241,6 +2224,7 @@ Array.from(tools).forEach((tool, i) => {
     if (tool.matches('[tool=commit]')) {
       _cancel();
       _commitMiningMeshes();
+      _commitVoxelMiningMeshes();
     } else if (tool.matches('[tool=image]')) {
       // nothing
     /* } else if (tool.matches('[sidebar]')) {
@@ -2279,6 +2263,7 @@ Array.from(tools).forEach((tool, i) => {
         uiMesh.update();
         
         _commitMiningMeshes();
+        _commitVoxelMiningMeshes();
 
         if (!['camera', 'scalpel'].includes(selectedTool)) {
           _setHoveredObjectMesh(null);
