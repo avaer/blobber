@@ -17,6 +17,7 @@ import {initLocalRig, updatePlayerFromCamera, updatePlayerFromXr, bindPeerConnec
 import {GLTFLoader} from './GLTFLoader.js';
 import {VOXLoader, VOXMesh, VOXParser} from './VOXLoader.js';
 import {XRPackage} from 'https://xrpackage.org/xrpackage.js'
+import itemModels from 'https://item-models.exokit.org/item-models.js';
 
 const _load = () => {
 
