@@ -17,6 +17,7 @@ import {initLocalRig, updatePlayerFromCamera, updatePlayerFromXr, bindPeerConnec
 import {GLTFLoader} from './GLTFLoader.js';
 import {VOXLoader, VOXMesh, VOXParser} from './VOXLoader.js';
 import {XRPackage} from 'https://xrpackage.org/xrpackage.js'
+import itemModels from 'https://item-models.exokit.org/item-models.js';
 
 const _load = () => {
 
@@ -54,6 +55,7 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 function sq(n) { return n*n; }
+const _escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const PARCEL_SIZE = 10;
 const size = PARCEL_SIZE + 1;
@@ -1437,12 +1439,32 @@ const _handleUpload = async file => {
     objectMeshes.push(objectMesh);
   }
 };
-interfaceDocument.addEventListener('drop', e => {
+interfaceDocument.addEventListener('drop', async e => {
   e.preventDefault();
 
-  if (e.dataTransfer.files.length > 0){
-    const [file] = e.dataTransfer.files;
-    _handleUpload(file);
+  if (e.dataTransfer.items.length > 0) {
+    const item = e.dataTransfer.items[0];
+    if (item.kind === 'file') {
+      await _handleUpload(item.getAsFile());
+    } else if (item.kind === 'string') {
+      const data = await new Promise((accept, reject) => {
+        item.getAsString(accept);
+      });
+      const j = (() => {
+        try {
+          return JSON.parse(data);
+        } catch(err) {
+          return null;
+        }
+      })();
+      if (j !== null) {
+        const {src} = j;
+        const res = await fetch(src);
+        const blob = await res.blob();
+        blob.name = src;
+        await _handleUpload(blob);
+      }
+    }
   }
 });
 
@@ -2651,6 +2673,91 @@ interfaceDocument.getElementById('enable-scripts-button').addEventListener('clic
   }
 }); */
 
+const prefabsButton = interfaceDocument.getElementById('prefabs-button');
+const prefabsContent = interfaceDocument.getElementById('prefabs-content');
+const prefabsSearch = interfaceDocument.getElementById('prefabs-search');
+const prefabsContentEnd = interfaceDocument.querySelector('.end');
+prefabsButton.addEventListener('click', e => {
+  prefabsButton.classList.toggle('hidden');
+  prefabsContent.classList.toggle('hidden');
+});
+let prefabSearchResults = itemModels;
+let lastPrefab = 0;
+prefabsSearch.addEventListener('input', e => {
+  const regex = new RegExp(_escapeRegExp(e.target.value), 'i');
+  prefabSearchResults = itemModels.filter(itemModel => regex.test(itemModel));
+  lastPrefab = 0;
+
+  const aPrefabs = Array.from(prefabsContent.querySelectorAll('.a-prefab'));
+  for (let i = 0; i < aPrefabs.length; i++) {
+    prefabsContent.removeChild(aPrefabs[i]);
+  }
+
+  _updatePrefabs();
+});
+const _updatePrefabs = () => {
+  const numPrefabs = Math.ceil(prefabsContent.getBoundingClientRect().height/80);
+  for (let i = 0; i < numPrefabs && lastPrefab < prefabSearchResults.length; i++) {
+    const itemModel = prefabSearchResults[lastPrefab++];
+    const src = itemModel.replace(/^([^\/]+?\/[^\/]+?)\.fbx$/, 'https://item-models.exokit.org/glb/$1.glb');
+
+    const aPrefab = document.createElement('nav');
+    aPrefab.classList.add('a-prefab');
+    aPrefab.setAttribute('draggable', 'true');
+    aPrefab.setAttribute('src', encodeURI(src));
+    aPrefab.innerHTML = `<div class=overlay>
+      <div class=multibutton>
+        <nav class="button first last add-button">Add</nav>
+      </div>
+    </div>
+    <img src="${encodeURI(src.replace(/\.glb$/, '.png'))}" width=80 height=80>
+    <div class=wrap>
+      <div class=label>${itemModel}</div>
+    </div>`;
+
+    aPrefab.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text', JSON.stringify({
+        type: 'model',
+        src,
+      }));
+    });
+    const addButton = aPrefab.querySelector('.add-button');
+    addButton.addEventListener('click', () => {
+      const dom = parseHtml(codeInput.value);
+      const xrSite = landConnection ? _findNodeWithTagNameAttributes(dom, 'xr-site', [{name: 'edit', value: 'true'}]) : _findNodeWithTagName(dom, 'xr-site');
+      if (xrSite) {
+        const position = localVector.copy(camera.position)
+          .divide(container.scale)
+          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+        position.y = 0;
+        xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
+        codeInput.value = serializeHtml(dom);
+        codeInput.dispatchEvent(new CustomEvent('change'));
+      } else {
+        console.warn('no xr-site to add to');
+      }
+    });
+
+    prefabsContent.insertBefore(aPrefab, prefabsContentEnd);
+  }
+};
+new IntersectionObserver(entries => {
+  let needsUpdate = false;
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (entry.isIntersecting) {
+      needsUpdate = true;
+      break;
+    }
+  }
+  if (needsUpdate) {
+    _updatePrefabs();
+  }
+}, {
+  root: prefabsContent,
+  // threshold: 0.001,
+}).observe(prefabsContentEnd);
+
 let physicsBound = false;
 interfaceDocument.getElementById('enable-physics-button').addEventListener('click', e => {
   e.preventDefault();
@@ -2896,6 +3003,7 @@ const uiRenderer = (() => {
         height: uiSize,
         zoom: 5,
         hideOps: true,
+        hidePrefabs: true,
       };
       for (let i = 0; i < tools.length; i++) {
         templateData[`tool${i+1}Selected`] = selectedTool === tools[i].getAttribute('tool');

@@ -33,18 +33,20 @@ input[type=file] {
 input[type=number]::-webkit-inner-spin-button {
   opacity: 1
 }
-.tools,
-.ops,
-.colors,
-.enters
+.top-left,
+.bottom-left
 {
   display: flex;
   position: absolute;
   z-index: 2;
   padding: 10px;
 }
-.tools {
+.top-left {
   top: 50px;
+  left: 0;
+}
+.bottom-left {
+  bottom: 0;
   left: 0;
 }
 .tools > .row > .tool,
@@ -68,6 +70,12 @@ input[type=number]::-webkit-inner-spin-button {
 .tools,
 .colors {
   flex-direction: column;
+}
+.tools {
+  margin-right: 5px;
+}
+.colors {
+  margin-right: 5px;
 }
 .row {
   display: flex;
@@ -121,8 +129,8 @@ input[type=number]::-webkit-inner-spin-button {
   overflow: hidden;
 }
 .ops {
-  top: 50px;
-  right: 0;
+  display: flex;
+  height: 30px;
 }
 .ops > .op {
   background-color: #FFF;
@@ -148,10 +156,6 @@ input[type=number]::-webkit-inner-spin-button {
 .ops > .op > .label {
   right: 0;
 }
-.colors {
-  bottom: 0;
-  left: 0;
-}
 .colors > .row > .color {
   position: relative;
 }
@@ -168,10 +172,6 @@ input[type=number]::-webkit-inner-spin-button {
 .colors > .row > .color:active,
 .colors > .row > .color.selected {
   background-color: #000;
-}
-.enters {
-  bottom: 0;
-  right: 0;
 }
 .enters > .enter + .enter {
   margin-left: 10px;
@@ -242,6 +242,93 @@ input[type=number]::-webkit-inner-spin-button {
 {
   display: none;
 }
+.top-right {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+  z-index: 2;
+}
+.sidebar-icon {
+  margin: 10px;
+  padding: 10px;
+  background-color: #FFF;
+  cursor: pointer;
+}
+.sidebar-icon:hover {
+  background-color: #42a5f5;
+  color: #FFF;
+}
+.sidebar-icon.hidden i:not(.open),
+.sidebar-icon:not(.hidden) i.open
+{
+  display: none;
+}
+.content {
+  background-color: #FFF;
+  height: calc(100vh - 50px);
+  width: 300px;
+  flex: 1;
+  overflow-y: auto;
+}
+.content.hidden {
+  display: none;
+}
+.prefabs-content .a-prefab
+{
+  display: flex;
+  position: relative;
+  padding: 5px 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+.prefabs-content .a-prefab img
+{
+  display: flex;
+  width: 80px;
+  height: 80px;
+  margin-right: 10px;
+  font-size: 50px;
+  justify-content: center;
+  align-items: center;
+}
+.prefabs-content .a-prefab img:not([src]) {
+  visibility: hidden;
+}
+.prefabs-content .a-prefab .wrap {
+  flex: 1;
+  overflow: hidden;
+}
+.prefabs-content input[type=text]
+{
+  width: 100%;
+  margin: 0;
+  padding: 15px;
+  border-radius: 0;
+}
+.prefabs-content .a-prefab .overlay
+{
+  display: flex;
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  background-image: linear-gradient(to right, transparent, #FFF 50%);
+  justify-content: flex-end;
+  align-items: center;
+  visibility: hidden;
+}
+.prefabs-content .a-prefab:hover .overlay
+{
+  visibility: visible;
+}
+.prefabs-content .end {
+  width: 100%;
+  height: 1px;
+}
 .background {
   position: absolute;
   top: 0;
@@ -252,149 +339,160 @@ input[type=number]::-webkit-inner-spin-button {
     </style>
   </head>
   <body style="width: {{width}}px; height: {{height}}px;">
-    <div class=tools style="transform-origin: 0 0; transform: scale({{zoom}});">
-      <div class=row>
-        <a id=tool-1 class="tool {{#tool1Selected}}selected{{/tool1Selected}}" tool="camera">
-          <i class="fal fa-camera"></i>
-          <div class=label>Camera tool</div>
+    <div class=top-left>
+      <div class=tools style="transform-origin: 0 0; transform: scale({{zoom}});">
+        <div class=row>
+          <a id=tool-1 class="tool {{#tool1Selected}}selected{{/tool1Selected}}" tool="camera">
+            <i class="fal fa-camera"></i>
+            <div class=label>Camera tool</div>
+          </a>
+          <a id=tool-2 class="tool {{#tool2Selected}}selected{{/tool2Selected}}" tool="firstperson">
+            <i class="fal fa-eye"></i>
+            <div class=label>First person</div>
+          </a>
+          <a id=tool-3 class="tool {{#tool3Selected}}selected{{/tool3Selected}}" tool="thirdperson">
+            <i class="fal fa-walking"></i>
+            <div class=label>Third person</div>
+          </a>
+          <a id=tool-4 class="tool {{#tool4Selected}}selected{{/tool4Selected}}" tool="brush">
+            <i class="fal fa-dice-d8"></i>
+            <div class=label>Draw tool</div>
+          </a>
+          <a id=tool-4 class="tool {{#tool5Selected}}selected{{/tool5Selected}}" tool="voxel">
+            <i class="fal fa-cube"></i>
+            <div class=label>Draw voxels</div>
+          </a>
+          <a id=tool-5 class="tool {{#tool6Selected}}selected{{/tool6Selected}}" tool="select">
+            <i class="fal fa-mouse-pointer"></i>
+            <div class=label>Select tool</div>
+          </a>
+          <a id=tool-6 class="tool {{#tool7Selected}}selected{{/tool7Selected}}" tool="erase">
+            <i class="fal fa-eraser"></i>
+            <div class=label>Eraser tool</div>
+          </a>
+          <a id=tool-7 class="tool {{#tool8Selected}}selected{{/tool8Selected}}" tool="paint">
+            <i class="fal fa-paint-brush"></i>
+            <div class=label>Color tool</div>
+          </a>
+          <a id=tool-8 class="tool {{#tool9Selected}}selected{{/tool9Selected}}" tool="pencil">
+            <i class="fal fa-pencil"></i>
+            <div class=label>Texture tool</div>
+          </a>
+          <a id=tool-9 class="tool {{#tool10Selected}}selected{{/tool10Selected}}" tool="image">
+            <i class="fal fa-upload"></i>
+            <div class=fill>
+              <input type=file id=upload-image-input>
+            </div>
+            <div class=label>Add file</div>
+          </a>
+          <a id=tool-10 class="tool {{#tool11Selected}}selected{{/tool11Selected}}" tool="scalpel">
+            <i class="fal fa-scalpel"></i>
+            <div class=label>Split tool</div>
+          </a>
+          <a id=tool-11 class="tool {{#tool12Selected}}selected{{/tool12Selected}}" tool="center">
+            <i class="fal fa-border-all"></i>
+            <div class=label>Center scene</div>
+          </a>
+          <!-- <a id=tool-12 class="tool {{#tool13Selected}}selected{{/tool13Selected}}" sidebar tool="script">
+            <i class="fal fa-scroll"></i>
+            <div class=label>Edit script</div>
+          </a>
+          <a id=tool-13 class="tool {{#tool14Selected}}selected{{/tool14Selected}}" sidebar tool="contract">
+            <i class="fal fa-lock"></i>
+            <div class=label>Edit contact</div>
+          </a> -->
+          <a id=tool-14 class="tool {{#tool15Selected}}selected{{/tool15Selected}} hidden" tool="commit">
+            <i class="fal fa-check"></i>
+            <div class=label>Commit object</div>
+          </a>
+        </div>
+        <label class=row>
+          <span>Brush size</span>
+          <input type="range" id="brush-size" value="0.5" min="0.1" max="2" step="0.1">
+          <span id=brush-size-text>0.5</span>
+        </label>
+        <label class=row>
+          <span>World scale</span>
+          <input type="range" id="world-scale" value="1" min="0.01" max="5" step="0.01">
+          <span id=world-scale-text>1</span>
+        </label>
+      </div>
+      <form class=ops id=ops-form style="{{#hideOps}}display: none;{{/hideOps}} transform-origin: 100% 0; transform: scale({{zoom}});">
+        <input type="text" required id="object-name" placeholder="Object name">
+        <a class="op" id=new-op>
+          <i class="fal fa-sparkles"></i>
+          <div class=label>New scene</div>
         </a>
-        <a id=tool-2 class="tool {{#tool2Selected}}selected{{/tool2Selected}}" tool="firstperson">
-          <i class="fal fa-eye"></i>
-          <div class=label>First person</div>
-        </a>
-        <a id=tool-3 class="tool {{#tool3Selected}}selected{{/tool3Selected}}" tool="thirdperson">
-          <i class="fal fa-walking"></i>
-          <div class=label>Third person</div>
-        </a>
-        <a id=tool-4 class="tool {{#tool4Selected}}selected{{/tool4Selected}}" tool="brush">
-          <i class="fal fa-dice-d8"></i>
-          <div class=label>Draw tool</div>
-        </a>
-        <a id=tool-4 class="tool {{#tool5Selected}}selected{{/tool5Selected}}" tool="voxel">
-          <i class="fal fa-cube"></i>
-          <div class=label>Draw voxels</div>
-        </a>
-        <a id=tool-5 class="tool {{#tool6Selected}}selected{{/tool6Selected}}" tool="select">
-          <i class="fal fa-mouse-pointer"></i>
-          <div class=label>Select tool</div>
-        </a>
-        <a id=tool-6 class="tool {{#tool7Selected}}selected{{/tool7Selected}}" tool="erase">
-          <i class="fal fa-eraser"></i>
-          <div class=label>Eraser tool</div>
-        </a>
-        <a id=tool-7 class="tool {{#tool8Selected}}selected{{/tool8Selected}}" tool="paint">
-          <i class="fal fa-paint-brush"></i>
-          <div class=label>Color tool</div>
-        </a>
-        <a id=tool-8 class="tool {{#tool9Selected}}selected{{/tool9Selected}}" tool="pencil">
-          <i class="fal fa-pencil"></i>
-          <div class=label>Texture tool</div>
-        </a>
-        <a id=tool-9 class="tool {{#tool10Selected}}selected{{/tool10Selected}}" tool="image">
-          <i class="fal fa-upload"></i>
+        <a class="op" id=load-op>
+          <i class="fal fa-folder-open"></i>
           <div class=fill>
-            <input type=file id=upload-image-input>
+            <input type=file id=load-op-input>
           </div>
-          <div class=label>Add file</div>
+          <div class=label>Load scene</div>
         </a>
-        <a id=tool-10 class="tool {{#tool11Selected}}selected{{/tool11Selected}}" tool="scalpel">
-          <i class="fal fa-scalpel"></i>
-          <div class=label>Split tool</div>
+        <a class="op" id=save-op>
+          <i class="fal fa-save"></i>
+          <div class=label>Save scene</div>
         </a>
-        <a id=tool-11 class="tool {{#tool12Selected}}selected{{/tool12Selected}}" tool="center">
-          <i class="fal fa-border-all"></i>
-          <div class=label>Center scene</div>
+        <a class="op" id=mint-op>
+          <i class="fal fa-cloud-upload"></i>
+          <div class=fill>
+            <input type=submit id=save-submit-input>
+          </div>
+          <div class=label>Mint token</div>
         </a>
-        <!-- <a id=tool-12 class="tool {{#tool13Selected}}selected{{/tool13Selected}}" sidebar tool="script">
-          <i class="fal fa-scroll"></i>
-          <div class=label>Edit script</div>
-        </a>
-        <a id=tool-13 class="tool {{#tool14Selected}}selected{{/tool14Selected}}" sidebar tool="contract">
-          <i class="fal fa-lock"></i>
-          <div class=label>Edit contact</div>
-        </a> -->
-        <a id=tool-14 class="tool {{#tool15Selected}}selected{{/tool15Selected}} hidden" tool="commit">
-          <i class="fal fa-check"></i>
-          <div class=label>Commit object</div>
-        </a>
-      </div>
-      <label class=row>
-        <span>Brush size</span>
-        <input type="range" id="brush-size" value="0.5" min="0.1" max="2" step="0.1">
-        <span id=brush-size-text>0.5</span>
-      </label>
-      <label class=row>
-        <span>World scale</span>
-        <input type="range" id="world-scale" value="1" min="0.01" max="5" step="0.01">
-        <span id=world-scale-text>1</span>
-      </label>
+      </form>
     </div>
-    <form class=ops id=ops-form style="{{#hideOps}}display: none;{{/hideOps}} transform-origin: 100% 0; transform: scale({{zoom}});">
-      <input type="text" required id="object-name" placeholder="Object name">
-      <a class="op" id=new-op>
-        <i class="fal fa-sparkles"></i>
-        <div class=label>New scene</div>
-      </a>
-      <a class="op" id=load-op>
-        <i class="fal fa-folder-open"></i>
-        <div class=fill>
-          <input type=file id=load-op-input>
+    <div class=bottom-left style="transform-origin: 0% 100%; transform: scale({{zoom}});">
+      <div class=colors>
+        <div class=row>
+          <a id=color-1 class="color {{#color1Selected}}selected{{/color1Selected}}"><div class=inner style="background-color: #ef5350;"></div></a>
+          <a id=color-2 class="color {{#color2Selected}}selected{{/color2Selected}}"><div class=inner style="background-color: #ec407a;"></div></a>
+          <a id=color-3 class="color {{#color3Selected}}selected{{/color3Selected}}"><div class=inner style="background-color: #ab47bc;"></div></a>
+          <a id=color-4 class="color {{#color4Selected}}selected{{/color4Selected}}"><div class=inner style="background-color: #7e57c2;"></div></a>
+          <a id=color-5 class="color {{#color5Selected}}selected{{/color5Selected}}"><div class=inner style="background-color: #5c6bc0;"></div></a>
+          <a id=color-6 class="color {{#color6Selected}}selected{{/color6Selected}}"><div class=inner style="background-color: #42a5f5;"></div></a>
+          <a id=color-7 class="color {{#color7Selected}}selected{{/color7Selected}}"><div class=inner style="background-color: #29b6f6;"></div></a>
+          <a id=color-8 class="color {{#color8Selected}}selected{{/color8Selected}}"><div class=inner style="background-color: #26c6da;"></div></a>
+          <a id=color-9 class="color {{#color9Selected}}selected{{/color9Selected}}"><div class=inner style="background-color: #26a69a;"></div></a>
+          <a id=color-10 class="color {{#color10Selected}}selected{{/color10Selected}}"><div class=inner style="background-color: #66bb6a;"></div></a>
         </div>
-        <div class=label>Load scene</div>
-      </a>
-      <a class="op" id=save-op>
-        <i class="fal fa-save"></i>
-        <div class=label>Save scene</div>
-      </a>
-      <a class="op" id=mint-op>
-        <i class="fal fa-cloud-upload"></i>
-        <div class=fill>
-          <input type=submit id=save-submit-input>
+        <div class=row>
+          <a id=color-11 class="color {{#color11Selected}}selected{{/color11Selected}}"><div class=inner style="background-color: #9ccc65;"></div></a>
+          <a id=color-12 class="color {{#color12Selected}}selected{{/color12Selected}}"><div class=inner style="background-color: #d4e157;"></div></a>
+          <a id=color-13 class="color {{#color13Selected}}selected{{/color13Selected}}"><div class=inner style="background-color: #ffee58;"></div></a>
+          <a id=color-14 class="color {{#color14Selected}}selected{{/color14Selected}}"><div class=inner style="background-color: #ffca28;"></div></a>
+          <a id=color-15 class="color {{#color15Selected}}selected{{/color15Selected}}"><div class=inner style="background-color: #ffa726;"></div></a>
+          <a id=color-16 class="color {{#color16Selected}}selected{{/color16Selected}}"><div class=inner style="background-color: #ff7043;"></div></a>
+          <a id=color-17 class="color {{#color17Selected}}selected{{/color17Selected}}"><div class=inner style="background-color: #8d6e63;"></div></a>
+          <a id=color-18 class="color {{#color18Selected}}selected{{/color18Selected}}"><div class=inner style="background-color: #bdbdbd;"></div></a>
+          <a id=color-19 class="color {{#color19Selected}}selected{{/color19Selected}}"><div class=inner style="background-color: #78909c;"></div></a>
+          <a id=color-20 class="color {{#color20Selected}}selected{{/color20Selected}}"><div class=inner style="background-color: #333333;"></div></a>
         </div>
-        <div class=label>Mint token</div>
-      </a>
-    </form>
-    <div class=enters style="transform-origin: 100% 100%; transform: scale({{zoom}});">
-      <!-- <a class="enter" id=enable-scripts-button>
-        <i class="fa fa-play"></i>
-        <div class=label>Scripts</div>
-      </a> -->
-      <a class="enter" id=enable-physics-button>
-        <i class="fa fa-atom"></i>
-        <div class=label>Physics</div>
-      </a>
-      <a class="enter disabled" id=enter-xr-button>
-        <i class="fa fa-head-vr"></i>
-        <div class=label>Enter VR</div>
-      </a>
-    </div>
-    <div class=colors style="transform-origin: 0 100%; transform: scale({{zoom}});">
-      <div class=row>
-        <a id=color-1 class="color {{#color1Selected}}selected{{/color1Selected}}"><div class=inner style="background-color: #ef5350;"></div></a>
-        <a id=color-2 class="color {{#color2Selected}}selected{{/color2Selected}}"><div class=inner style="background-color: #ec407a;"></div></a>
-        <a id=color-3 class="color {{#color3Selected}}selected{{/color3Selected}}"><div class=inner style="background-color: #ab47bc;"></div></a>
-        <a id=color-4 class="color {{#color4Selected}}selected{{/color4Selected}}"><div class=inner style="background-color: #7e57c2;"></div></a>
-        <a id=color-5 class="color {{#color5Selected}}selected{{/color5Selected}}"><div class=inner style="background-color: #5c6bc0;"></div></a>
-        <a id=color-6 class="color {{#color6Selected}}selected{{/color6Selected}}"><div class=inner style="background-color: #42a5f5;"></div></a>
-        <a id=color-7 class="color {{#color7Selected}}selected{{/color7Selected}}"><div class=inner style="background-color: #29b6f6;"></div></a>
-        <a id=color-8 class="color {{#color8Selected}}selected{{/color8Selected}}"><div class=inner style="background-color: #26c6da;"></div></a>
-        <a id=color-9 class="color {{#color9Selected}}selected{{/color9Selected}}"><div class=inner style="background-color: #26a69a;"></div></a>
-        <a id=color-10 class="color {{#color10Selected}}selected{{/color10Selected}}"><div class=inner style="background-color: #66bb6a;"></div></a>
       </div>
-      <div class=row>
-        <a id=color-11 class="color {{#color11Selected}}selected{{/color11Selected}}"><div class=inner style="background-color: #9ccc65;"></div></a>
-        <a id=color-12 class="color {{#color12Selected}}selected{{/color12Selected}}"><div class=inner style="background-color: #d4e157;"></div></a>
-        <a id=color-13 class="color {{#color13Selected}}selected{{/color13Selected}}"><div class=inner style="background-color: #ffee58;"></div></a>
-        <a id=color-14 class="color {{#color14Selected}}selected{{/color14Selected}}"><div class=inner style="background-color: #ffca28;"></div></a>
-        <a id=color-15 class="color {{#color15Selected}}selected{{/color15Selected}}"><div class=inner style="background-color: #ffa726;"></div></a>
-        <a id=color-16 class="color {{#color16Selected}}selected{{/color16Selected}}"><div class=inner style="background-color: #ff7043;"></div></a>
-        <a id=color-17 class="color {{#color17Selected}}selected{{/color17Selected}}"><div class=inner style="background-color: #8d6e63;"></div></a>
-        <a id=color-18 class="color {{#color18Selected}}selected{{/color18Selected}}"><div class=inner style="background-color: #bdbdbd;"></div></a>
-        <a id=color-19 class="color {{#color19Selected}}selected{{/color19Selected}}"><div class=inner style="background-color: #78909c;"></div></a>
-        <a id=color-20 class="color {{#color20Selected}}selected{{/color20Selected}}"><div class=inner style="background-color: #333333;"></div></a>
+      <div class=enters>
+        <a class="enter" id=enable-physics-button>
+          <i class="fa fa-atom"></i>
+          <div class=label>Physics</div>
+        </a>
+        <a class="enter disabled" id=enter-xr-button>
+          <i class="fa fa-head-vr"></i>
+          <div class=label>Enter VR</div>
+        </a>
       </div>
     </div>
-    <div class=script-input id=script-input>
+    <div class=top-right>
+      <div class="sidebar-icon {{#hidePrefabs}}hidden{{/hidePrefabs}}" id=prefabs-button>
+        <i class="fa fa-arrow-left"></i>
+        <i class="fa fa-arrow-right open"></i>
+        <div class=label>Prefabs</div>
+      </div>
+      <div class="content prefabs-content hidden" id=prefabs-content>
+        <input type=text placeholder="Find a model..." id=prefabs-search>
+        <div class=end></div>
+      </div>
+    </div>
+    <!-- <div class=script-input id=script-input>
       <div class=label>Script</div>
       <textarea id=script-input-textarea></textarea>
     </div>
@@ -402,7 +500,7 @@ input[type=number]::-webkit-inner-spin-button {
       <div class=label>Contract</div>
       <textarea id=contract-input-textarea></textarea>
     </div>
-    <!-- <div class=shader-input id=shader-input>
+    <div class=shader-input id=shader-input>
       <div class=label>Vertex</div>
       <textarea id=shader-input-v></textarea>
       <div class=label>Fragment</div>
