@@ -2897,6 +2897,7 @@ const uiRenderer = (() => {
         height: uiSize,
         zoom: 5,
         hideOps: true,
+        hidePrefabs: true,
       };
       for (let i = 0; i < tools.length; i++) {
         templateData[`tool${i+1}Selected`] = selectedTool === tools[i].getAttribute('tool');
