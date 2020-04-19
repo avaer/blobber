@@ -2071,7 +2071,7 @@ const keys = {
       case 46: // del
       {
         if (selectedObjectMeshes.length > 0) {
-          const oldSelectedObjectMesh = selectedObjectMeshes;
+          const oldSelectedObjectMeshes = selectedObjectMeshes;
 
           _setHoveredObjectMesh(null);
           _setSelectedObjectMesh(null, false);
