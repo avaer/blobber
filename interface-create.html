@@ -246,6 +246,8 @@ input[type=number]::-webkit-inner-spin-button {
   position: absolute;
   top: 50px;
   right: 0;
+  display: flex;
+  align-items: flex-start;
   z-index: 2;
 }
 .sidebar-icon {
@@ -258,7 +260,9 @@ input[type=number]::-webkit-inner-spin-button {
   background-color: #42a5f5;
   color: #FFF;
 }
-.sidebar-icon.hidden {
+.sidebar-icon.hidden i:not(.open),
+.sidebar-icon:not(.hidden) i.open
+{
   display: none;
 }
 .content {
@@ -480,6 +484,7 @@ input[type=number]::-webkit-inner-spin-button {
     <div class=top-right>
       <div class="sidebar-icon {{#hidePrefabs}}hidden{{/hidePrefabs}}" id=prefabs-button>
         <i class="fa fa-arrow-left"></i>
+        <i class="fa fa-arrow-right open"></i>
         <div class=label>Prefabs</div>
       </div>
       <div class="content prefabs-content hidden" id=prefabs-content>

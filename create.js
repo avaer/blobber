@@ -2678,8 +2678,8 @@ const prefabsContent = interfaceDocument.getElementById('prefabs-content');
 const prefabsSearch = interfaceDocument.getElementById('prefabs-search');
 const prefabsContentEnd = interfaceDocument.querySelector('.end');
 prefabsButton.addEventListener('click', e => {
-  prefabsButton.classList.add('hidden');
-  prefabsContent.classList.remove('hidden');
+  prefabsButton.classList.toggle('hidden');
+  prefabsContent.classList.toggle('hidden');
 });
 let prefabSearchResults = itemModels;
 let lastPrefab = 0;
