@@ -2484,7 +2484,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
       type: 'application/json',
       data: JSON.stringify({
         xr_type: 'gltf@0.0.1',
-        xr_main: 'model.gltf',
+        start_url: 'model.gltf',
       }, null, 2),
     }
   ]);
