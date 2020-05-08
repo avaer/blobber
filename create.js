@@ -2955,7 +2955,9 @@ enterXrButton.addEventListener('click', e => {
         'local-floor',
         'bounded-floor',
       ],
-    }).then(onSessionStarted);
+    }).then(onSessionStarted).catch(err => {
+      console.warn(err);
+    });
   } else {
     currentSession.end();
   }
