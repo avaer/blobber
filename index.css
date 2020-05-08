@@ -612,3 +612,8 @@ canvas {
 section:nth-child(odd) {
   background-color: #EEE;
 } */
+.enters,
+.colors
+{
+  display: flex;
+}
