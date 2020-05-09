@@ -3,6 +3,7 @@ const LOCAL_DEV = false;
 const hijackedClientIds = {};
 const hijackedIds = {};
 const startUrls = {};
+const scriptUrls = {};
 self.addEventListener('message', e => {
   const {
     data
@@ -15,24 +16,18 @@ self.addEventListener('message', e => {
     const {
       id,
       startUrl,
+      script,
       files
     } = data;
     // console.log('got hijack', data);
     hijackedIds[id] = files;
     startUrls[startUrl] = true;
+    if (script) {
+      scriptUrls[script] = true;
+    }
   } else {
     console.warn('unknown method', method);
   }
-  /* const {method} = data;
-  if (method === 'redirect') {
-    const {src, dst} = data;
-    let redirectsArray = redirects[src];
-    if (!redirectsArray) {
-      redirectsArray = [];
-      redirects[src] = redirectsArray;
-    }
-    redirectsArray.push(dst);
-  } */
   e.ports[0].postMessage({});
 });
 self.addEventListener('install', event => {
@@ -43,7 +38,7 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // console.log('got fetch', event, {hijackedClientIds, hijackedIds, startUrls});
+  // console.log('got fetch', event, {hijackedClientIds, hijackedIds, startUrls, scriptUrls});
   const {
     clientId,
   } = event;
@@ -91,6 +86,10 @@ self.addEventListener('fetch', event => {
       }
       if (startUrls[pathname.slice(1)]) {
         pathname = '/xrpackage/iframe.html';
+        pathnameChanged = true;
+      }
+      if (scriptUrls[pathname.slice(1)]) {
+        pathname = '/xrpackage/worker.js';
         pathnameChanged = true;
       }
       let match = pathname.match(/(\/xrpackage\/.*)$/);
