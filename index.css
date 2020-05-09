@@ -551,6 +551,7 @@ canvas {
   min-width: 100vw;
   min-height: 100vh;
   padding-top: 50px;
+  background-color: #ff7043;
 }
 .container {
   display: flex;
