@@ -188,8 +188,8 @@ export async function saveObjectMeshes(objectMeshes) {
   });
   return await p;
 };
-export async function loadObjectMeshes(s) {
-  const src = (() => {
+export async function loadObjectMeshes(arrayBuffer) {
+  /* const src = (() => {
     if (typeof s === 'string') {
       return s;
     } else if (s instanceof ArrayBuffer) {
@@ -197,18 +197,26 @@ export async function loadObjectMeshes(s) {
         type: 'model/gltf.binary',
       });
       return URL.createObjectURL(blob);
-    /* } else if (s.constructor.name === 'File') {
-      return URL.createObjectURL(s); */
     } else {
       console.warn('cannot load object', s);
       throw new Error('cannot load object');
     }
-  })();
-
-  const p = makePromise();
-  const loader = new GLTFLoader();
-  loader.load(src, p.accept, function onProgress() {}, p.reject);
-  const o = await p;
+  })(); */
+  const uint8Array = new Uint8Array(arrayBuffer);
+  const p = new XRPackage(uint8Array);
+  // console.log('got package', p);
+  const d = p.getMainData();
+  // console.log('got data', d);
+  const b = new Blob([d], {
+    type: 'application/octet-stream',
+  });
+  const u = URL.createObjectURL(b);
+  // console.log('got url', u);
+  const o = await new Promise((accept, reject) => {
+    new GLTFLoader().load(u, accept, function onProgress() {}, reject);
+  });
+  URL.revokeObjectURL(u);
+  // console.log('got o', o);
   const {scene} = o;
   const objectMeshes = scene.children.map(child => {
     if (child.userData && child.userData.gltfExtensions && child.userData.gltfExtensions.standardObject) {
