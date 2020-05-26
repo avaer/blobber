@@ -2586,11 +2586,17 @@ _bindUploadFileButton(interfaceDocument.getElementById('load-op-input'), file =>
   r.readAsArrayBuffer(file);
 });
 interfaceDocument.getElementById('save-op').addEventListener('click', async e => {
-  const arrayBuffer = await saveObjectMeshes(objectMeshes/*, scriptInputTextarea.value*/);
-  const blob = new Blob([arrayBuffer], {
+  const modelUint8Array = await saveObjectMeshes(objectMeshes/*, scriptInputTextarea.value*/);
+  const modelBlob = new Blob([modelUint8Array], {
     type: 'model/gltf.binary',
   });
-  downloadFile(blob, 'object.glb');
+  modelBlob.name = 'model.glb';
+
+  const packageUint8Array = await XRPackage.compileFromFile(modelBlob);
+  const packageBlob = new Blob([packageUint8Array], {
+    type: 'application/webbundle',
+  });
+  downloadFile(packageBlob, 'object.wbn');
 });
 
 const colors = interfaceDocument.querySelectorAll('.color');
