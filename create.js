@@ -2469,7 +2469,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
   _centerObjectMeshes();
   const [
     screenshotBlob,
-    modelArrayBuffer,
+    modelUint8Array,
   ] = await Promise.all([
     _screenshotMiningMeshes(),
     saveObjectMeshes(objectMeshes),
@@ -2478,7 +2478,7 @@ interfaceDocument.getElementById('ops-form').addEventListener('submit', async e 
     {
       url: '/model.gltf',
       type: 'application/octet-stream',
-      data: new Uint8Array(modelArrayBuffer),
+      data: modelArrayBuffer,
     },
     {
       url: '/manifest.json',

@@ -176,6 +176,11 @@ export async function saveObjectMeshes(objectMeshes) {
   const p = makePromise();
   const exporter = new GLTFExporter();
   exporter.parse(exportScene, gltf => {
+    if (gltf instanceof ArrayBuffer) {
+      gltf = new Uint8Array(gltf);
+    } else {
+      gltf = new Uint8Array(new TextEncoder().encode(JSON.stringify(gltf)));
+    }
     p.accept(gltf);
   }, {
     binary: true,
