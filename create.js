@@ -16,7 +16,7 @@ import {makeId, XRChannelConnection} from './multiplayer.js';
 import {initLocalRig, updatePlayerFromCamera, updatePlayerFromXr, bindPeerConnection} from './peerconnection.js';
 import {GLTFLoader} from './GLTFLoader.js';
 import {VOXLoader, VOXMesh, VOXParser} from './VOXLoader.js';
-import {XRPackage} from 'https://xrpackage.org/xrpackage.js'
+import {XRPackage} from 'https://static.xrpackage.org/xrpackage.js'
 import itemModels from 'https://item-models.exokit.org/item-models.js';
 
 const _load = () => {
